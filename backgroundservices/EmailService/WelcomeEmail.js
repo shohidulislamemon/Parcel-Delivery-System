@@ -1,24 +1,35 @@
-const ejs= require("ejs");
-const dotenv= require("dotenv");
-const sendMail =require("../helpers/sendmail");
+const ejs = require("ejs");
+const dotenv = require("dotenv");
+const sendMail = require("../helpers/sendmail");
 const User = require("../models/User");
-const CryptoJS= require("crypto-js")
+const CryptoJS = require("crypto-js")
 
 dotenv.config();
-const sendWelcomeEmail = async()=>{
-    const users=await User.find({status:0});
+const sendWelcomeEmail = async () => {
+    const users = await User.find({ status: 0 });
 
-    if(users.length >0){
-        for (let user of users){
-            const hashedpassword =CryptoJS.AES.decrypt(user.password,process.env.PASS);
-            const originalPassword=hashedpassword.toString(CryptoJS.enc.Utf8);
+    if (users.length > 0) {
+        for (let user of users) {
+            const hashedpassword = CryptoJS.AES.decrypt(user.password, process.env.PASS);
+            const originalPassword = hashedpassword.toString(CryptoJS.enc.Utf8);
 
             ejs.renderFile(
-                "templates/welcome.ejs",
-                {fullname:user.fullname, password:originalPassword, email:user.email},
-                (err,info)=>{
-                    if(err){
-                        console.log(err);
+                "./templates/welcome.ejs",
+                { fullname: user.fullname, password: originalPassword, email: user.email },
+                async (err, info) => {
+
+                    let messageOption = {
+                        from: process.env.MAIL,
+                        to: user.email,
+                        subject: "Welcome to ExcelBD Parcel Service",
+                        html: info,
+                    }
+
+                    try {
+                        sendMail(messageOption);
+                        await User.findByIdAndUpdate(user._id, { $set: { status: 1 } })
+                    } catch (error) {
+                        console.log(error);
                     }
                 }
 
@@ -28,4 +39,4 @@ const sendWelcomeEmail = async()=>{
 }
 
 
-module.exports= {sendWelcomeEmail}
+module.exports = { sendWelcomeEmail }

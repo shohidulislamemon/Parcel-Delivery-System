@@ -2,7 +2,8 @@ const express = require("express");
 const app = express();
 const dotenv = require("dotenv");
 const cron = require("node-cron");
-const mongoose = require("mongoose")
+const mongoose = require("mongoose");
+const { sendWelcomeEmail } = require("./EmailService/WelcomeEmail");
 
 dotenv.config();
 
@@ -14,10 +15,10 @@ mongoose.connect(DB).then(() => {
     console.log(err)
 })
 
-
+// TASK SCHEDULER 
 const run = () => {
     cron.schedule('* * * * *', () => {
-          
+        sendWelcomeEmail()
     });
 }
 
