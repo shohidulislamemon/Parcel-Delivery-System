@@ -1,5 +1,5 @@
 import React, { Children } from "react";
-import {  Outlet, RouterProvider, createBrowserRouter } from "react-router";
+import { Outlet, RouterProvider, createBrowserRouter } from "react-router";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Menu from "./components/Menu";
@@ -7,6 +7,7 @@ import Home from "./pages/Home";
 import Parcels from "./pages/Parcels";
 import Parcel from "./pages/Parcel";
 import Users from "./pages/Users";
+import Login from "./pages/Login";
 
 const App = () => {
   const Layout = () => {
@@ -48,6 +49,10 @@ const App = () => {
           element: <Users />,
         },
       ],
+    },
+    {
+      path: "/login",
+      element: <Login />,
     },
   ]);
 
