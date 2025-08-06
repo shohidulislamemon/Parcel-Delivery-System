@@ -2,66 +2,63 @@ const ejs = require("ejs");
 const dotenv = require("dotenv");
 const sendMail = require("../helpers/sendmail");
 const Parcel = require("../models/Parcel");
+const path = require("path");
 
 dotenv.config();
+
+const renderTemplate = (templatePath, data) => {
+    return new Promise((resolve, reject) => {
+        ejs.renderFile(templatePath, data, (err, html) => {
+            if (err) reject(err);
+            else resolve(html);
+        });
+    });
+};
 
 const SendParcelDeliveredEmail = async () => {
     const parcels = await Parcel.find({ status: 2 });
 
     if (parcels.length > 0) {
         for (let parcel of parcels) {
-            ejs.renderFile(
-                "./templates/deliveredparcel.ejs",
-                {
-                    senderName: parcel.senderName,
-                    from: parcel.from,
-                    to: parcel.to,
-                    recipientName: parcel.recipientName,
-                    cost: parcel.cost,
-                    weight: parcel.weight,
-                    note: parcel.note,
-                },
-                async (err, data) => {
-                    let messageOption = {
-                        from: process.env.MAIL,
-                        to: parcel.recipientEmail,
-                        subject: "Your parcel has been delivered",
-                        html: info,
-                    };
-                    try {
-                        await sendMail(messageOption);
-                    } catch (error) {
-                        console.log(error);
-                    }
-                }
-            );
+            const commonData = {
+                senderName: parcel.senderName,
+                from: parcel.from,
+                to: parcel.to,
+                recipientName: parcel.recipientName,
+                cost: parcel.cost,
+                weight: parcel.weight,
+                note: parcel.note,
+            };
 
-            ejs.renderFile(
-                "./templates/deliveredparcel.ejs",
-                {
-                    senderName: parcel.senderName,
-                    from: parcel.from,
-                    to: parcel.to,
-                    recipientName: parcel.recipientName,
-                    cost: parcel.cost,
-                    weight: parcel.weight,
-                    note: parcel.note,
-                },
-                async (err, data) => {
-                    let messageOption = {
-                        from: process.env.MAIL,
-                        to: parcel.senderEmail,
-                        subject: "Your parcel has been delivered",
-                        html: info,
-                    };
-                    try {
-                        await sendMail(messageOption);
-                        await Parcel.findByIdAndUpdate(parcel._id,{$set: {status:3}})
-                    } catch (error) {
-                        console.log(error);
-                    }
-                }
-            );
+            try {
+                const htmlContent = await renderTemplate(
+                    path.join(__dirname, "../templates/deliveredparcel.ejs"),
+                    commonData
+                );
+
+                // Send to recipient
+                await sendMail({
+                    from: process.env.MAIL,
+                    to: parcel.recipientEmail,
+                    subject: "📦 Your parcel has been delivered",
+                    html: htmlContent,
+                });
+
+                // Send to sender
+                await sendMail({
+                    from: process.env.MAIL,
+                    to: parcel.senderEmail,
+                    subject: "📬 Delivery confirmation for your parcel",
+                    html: htmlContent,
+                });
+
+                // Update status to 3
+                await Parcel.findByIdAndUpdate(parcel._id, {
+                    $set: { status: 3 },
+                });
+            } catch (error) {
+                console.error("❌ Error sending delivery emails:", error);
+            }
         }
     }
 };

@@ -19,11 +19,12 @@ mongoose.connect(DB).then(() => {
 
 // TASK SCHEDULER 
 const run = () => {
-    cron.schedule('* * * * * *', () => {
-        sendWelcomeEmail();
-        SendParcelDeliveredEmail();
-        SendParcelPendingEmail();
-    });
+   cron.schedule('* * * * *', async () => {
+    await sendWelcomeEmail();
+    await SendParcelPendingEmail();
+    await SendParcelDeliveredEmail();
+});
+
 }
 
 run();
