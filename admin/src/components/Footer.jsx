@@ -2,7 +2,7 @@ import { Link } from "react-router";
 
 const Footer = () => {
   return (
-    <footer className="bg-[#f4fafd] px-6 sm:px-10 py-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-inner">
+    <footer className="bg-[#e4f5fd] px-6 sm:px-10 py-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-inner">
       <img
         src="/logo.png"
         alt="Footer Logo"
