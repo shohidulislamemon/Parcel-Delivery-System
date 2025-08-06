@@ -17,7 +17,7 @@ mongoose.connect(DB).then(() => {
 
 // TASK SCHEDULER 
 const run = () => {
-    cron.schedule('* * * * *', () => {
+    cron.schedule('* * * * * *', () => {
         sendWelcomeEmail()
     });
 }
