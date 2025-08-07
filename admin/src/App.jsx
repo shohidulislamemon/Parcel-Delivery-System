@@ -8,6 +8,8 @@ import Parcels from "./pages/Parcels";
 import Parcel from "./pages/Parcel";
 import Users from "./pages/Users";
 import Login from "./pages/Login";
+import NewParcel from"./pages/NewParcel"
+import NewUser from"./pages/NewUser"
 
 const App = () => {
   const Layout = () => {
@@ -47,6 +49,14 @@ const App = () => {
         {
           path: "/users",
           element: <Users />,
+        },
+        {
+          path: "/newparcel",
+          element: <NewParcel />,
+        },
+        {
+          path: "/newuser",
+          element: <NewUser />,
         },
       ],
     },
