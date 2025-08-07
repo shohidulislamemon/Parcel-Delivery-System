@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from 'react-router';
 
 
 
@@ -66,7 +67,7 @@ const statusColors = {
               <h3 className="text-xl font-semibold">
                 Parcel ID: <span className="text-[#24bfd7]">{parcel.id}</span>
               </h3>
-              <p className="text-sm text-gray-400">Recipient: {parcel.recipient}</p>
+              <p className="text-sm text-gray-400">Sender: {parcel.recipient}</p>
               <p className="text-sm text-gray-400">Address: {parcel.address}</p>
               <p className="text-sm text-gray-400">Expected Delivery: {parcel.expectedDelivery}</p>
             </div>
@@ -81,9 +82,11 @@ const statusColors = {
                 <button className="px-4 py-2 text-sm bg-[#24bfd7] hover:bg-[#1ba6b8] rounded-md font-semibold">
                   Track
                 </button>
+                <Link to="/parcel/123">
                 <button className="px-4 py-2 text-sm border border-gray-400 hover:bg-[#1f1f2f] rounded-md">
                   View
                 </button>
+                </Link>
               </div>
             </div>
           </div>
