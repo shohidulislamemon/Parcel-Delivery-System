@@ -35,7 +35,7 @@ const updateParcel = async (req, res) => {
     const updatedParcel = await Parcel.findByIdAndUpdate(
       req.params.id,
       { $set: req.body },
-      { new: true } // returns the updated document
+      { new: true } 
     );
 
     if (!updatedParcel) {

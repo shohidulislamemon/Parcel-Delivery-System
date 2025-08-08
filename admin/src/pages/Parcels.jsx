@@ -1,9 +1,13 @@
 import { DataGrid } from "@mui/x-data-grid";
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
+import { publicRequest } from "../requestMethods";
 
 const Parcels = () => {
+  const [data, setData] = useState([]);
+
   const columns = [
-    { field: "id", headerName: "ID", width: 20 },
+    { field: "_id", headerName: "ID", width: 20 },
     { field: "senderName", headerName: "Sender Name", width: 120 },
     { field: "senderEmail", headerName: "Sender Email", width: 180 },
     { field: "recipientName", headerName: "Recipient Name", width: 120 },
@@ -19,61 +23,48 @@ const Parcels = () => {
       width: 180,
       renderCell: (params) => (
         <div className="flex gap-2">
+          <Link to={`/parcel/${params.row._id}`}>
+            <button className="w-[70px] bg-[#2596be] text-white text-sm px-3 py-1 rounded hover:bg-[#1d7ea1] transition duration-200">
+              Edit
+            </button>
+          </Link>
+          <Link>
           <button
-            className="bg-[#2596be] text-white text-sm px-3 py-1 rounded hover:bg-[#1d7ea1] transition duration-200"
-            onClick={() => console.log("Edit", params.row.id)}
-          >
-            Edit
-          </button>
-          <button
-            className="bg-[#e74c3c] text-white text-sm px-3 py-1 rounded hover:bg-[#c0392b] transition duration-200"
-            onClick={() => console.log("Delete", params.row.id)}
+            className="w-[70px] bg-[#e74c3c] text-white text-sm px-3 py-1 rounded hover:bg-[#c0392b] transition duration-200"
+            onClick={()=>handleDelete(params.row._id)}
           >
             Delete
           </button>
+          </Link>
         </div>
       ),
     },
   ];
 
-  const rows = [
-    {
-      id: 1,
-      senderName: "Alice",
-      senderEmail: "alice@example.com",
-      recipientName: "Bob",
-      recipientEmail: "bob@example.com",
-      from: "Dhaka",
-      to: "Chittagong",
-      weight: 2.5,
-      cost: 150,
-      status: "Pending",
-    },
-    {
-      id: 2,
-      senderName: "John",
-      senderEmail: "john@example.com",
-      recipientName: "Jane",
-      recipientEmail: "jane@example.com",
-      from: "Khulna",
-      to: "Rajshahi",
-      weight: 1.2,
-      cost: 100,
-      status: "Delivered",
-    },
-    {
-      id: 3,
-      senderName: "Rahim",
-      senderEmail: "rahim@example.com",
-      recipientName: "Karim",
-      recipientEmail: "karim@example.com",
-      from: "Sylhet",
-      to: "Barisal",
-      weight: 3,
-      cost: 180,
-      status: "Processing",
-    },
-  ];
+  useEffect(() => {
+    const getParcels = async () => {
+      try {
+        const res = await publicRequest.get("/parcels");
+
+        setData(res.data);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    getParcels();
+  }, []);
+
+  const handleDelete=async(id)=>{
+    try {
+      await publicRequest.delete(`/parcels/${id}`)
+      // window.location.reload();
+      
+      setData((prev) => prev.filter((parcel) => parcel._id !== id));
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   return (
     <div className="m-[30] bg-[#fff] p-[20px]">
       <div className="flex items-center justify-between">
@@ -85,7 +76,8 @@ const Parcels = () => {
         </Link>
       </div>
       <DataGrid
-        rows={rows}
+        rows={data}
+        getRowId={(row) => row._id}
         columns={columns}
         // getRowId={(row) => row._id}
         // disableSelectionOnClick

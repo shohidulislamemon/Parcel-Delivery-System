@@ -4,7 +4,7 @@ const router = express.Router();
 
 
 // DELETING USER
-router.delete(":id",deleteUser)
+router.delete("/:id",deleteUser)
 
 // GET ALL USER
 

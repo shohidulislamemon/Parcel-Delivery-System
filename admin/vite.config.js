@@ -8,4 +8,8 @@ export default defineConfig({
     tailwindcss(),
     react()
   ],
+  server: {
+    host: 'admin.excelbd.com',
+    port: 4000, // or any port you want
+  },
 })

@@ -22,6 +22,8 @@ const SendParcelDeliveredEmail = async () => {
         for (let parcel of parcels) {
             const commonData = {
                 senderName: parcel.senderName,
+                senderEmail: parcel.senderEmail,
+                recipientEmail: parcel.recipientEmail,
                 from: parcel.from,
                 to: parcel.to,
                 recipientName: parcel.recipientName,

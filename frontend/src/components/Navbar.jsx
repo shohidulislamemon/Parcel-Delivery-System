@@ -20,7 +20,7 @@ const Navbar = () => {
   }, []);
 
   return (
-    <header className="h-[80px] bg-white flex items-center justify-between px-6 sm:px-10 shadow-md z-50 relative">
+    <header className="h-[80px] bg-[#e4f5fd] flex items-center justify-between px-6 sm:px-10 shadow-md z-50 relative">
       {/* Logo */}
       <Link to="/">
         <img

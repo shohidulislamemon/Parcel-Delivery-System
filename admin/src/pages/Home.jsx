@@ -40,27 +40,33 @@ const Home = () => {
       </div>
 
       <div className="flex items-center justify-between">
-        <div className="h-[450px] w-[500px] text-[#24bfd7]">
+        <div className="h-[450px] w-[500px] text-[#fff]">
           <PieChart
-          series={[
-            {
-              data: [
-                { id: 0, value: 10, label: "series A" },
-                { id: 1, value: 15, label: "series B" },
-                { id: 2, value: 20, label: "series C" },
-              ],
-              innerRadius: 30,
-              outerRadius: 100,
-              paddingAngle: 5,
-              cornerRadius: 5,
-              startAngle: -45,
-              endAngle: 225,
-              cx: 150,
-              cy: 150,
-            },
-          ]}
-        />
-
+            series={[
+              {
+                data: [
+                  { id: 0, value: 100, label: "Pending " },
+                  { id: 1, value: 45, label: "In Transit" },
+                  { id: 2, value: 15, label: "Delivered " },
+                  { id: 3, value: 6, label: "Cancelled" },
+                  { id: 4, value: 9, label: "Returned" },
+                ],
+                innerRadius: 30,
+                outerRadius: 100,
+                paddingAngle: 5,
+                cornerRadius: 5,
+                startAngle: -45,
+                endAngle: 225,
+                cx: 150,
+                cy: 150,
+                labelStyle: {
+                  fill: "#fff", 
+                  fontSize: 14,
+                  fontWeight: 600,
+                },
+              },
+            ]}
+          />
         </div>
         <div className="h-[300px] w-[300px] shadow-lg p-[20px] ">
           <h2 className="flex px-[20px] text-[#24bfd7]">Recent Users</h2>
