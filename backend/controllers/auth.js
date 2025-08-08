@@ -8,27 +8,35 @@ dotenv.config();
 
 // REGISTER USER
 const registerUser = async (req, res) => {
-    const newUser = User({
-        fullname: req.body.fullname,
-        email: req.body.email.toLowerCase(),
-        age: req.body.age,
-        division: req.body.division,
-        address: req.body.address,
-        password: CryptoJS.AES.encrypt(
-            req.body.password,
-            process.env.PASS
-        ).toString()
-    })
+  try {
+    const existingUser = await User.findOne({
+      email: req.body.email.toLowerCase(),
+    });
 
-    try {
-        const user = await newUser.save();
-        res.status(201).json(user)
-    } catch (error) {
-        res.status(500).json(error)
+    if (existingUser) {
+      return res.status(400).json({ message: "Email already in use" });
     }
 
-}
+    // Create new user
+    const newUser = new User({
+      fullname: req.body.fullName, // Match frontend casing
+      email: req.body.email.toLowerCase(),
+      age: req.body.age,
+      division: req.body.division,
+      address: req.body.address,
+      password: CryptoJS.AES.encrypt(
+        req.body.password,
+        process.env.PASS
+      ).toString(),
+    });
 
+    const savedUser = await newUser.save();
+    res.status(201).json(savedUser);
+  } catch (error) {
+    console.error("Registration error:", error);
+    res.status(500).json({ message: "Failed to register user", error });
+  }
+};
 
 // LOGIN USER
 const loginUser = async (req, res) => {
