@@ -1,8 +1,38 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { HiArrowSmallUp, HiArrowLongDown } from "react-icons/hi2";
 import { PieChart } from "@mui/x-charts/PieChart";
+import publicRequest from "../requestMethods";
 
 const Home = () => {
+  const [parcels, setParcels] = useState([]);
+  const [users, setUsers] = useState([]);
+  // const [parcels,setParcels] = useState([]);
+
+  useEffect(() => {
+    const getParcels = async () => {
+      try {
+        const res = await publicRequest.get("/parcels");
+        setParcels(res.data);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    getParcels();
+  }, []);
+
+
+  useEffect(() => {
+    const getUsers = async () => {
+      try {
+        const res = await publicRequest.get("/users");
+        setUsers(res.data);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    getUsers();
+  }, []);
+
   return (
     <div>
       <div className="flex items-center ">
@@ -38,7 +68,6 @@ const Home = () => {
           </div>
         </div>
       </div>
-
       <div className="flex items-center justify-between">
         <div className="h-[450px] w-[500px] text-[#fff]">
           <PieChart
@@ -60,7 +89,7 @@ const Home = () => {
                 cx: 150,
                 cy: 150,
                 labelStyle: {
-                  fill: "#fff", 
+                  fill: "#fff",
                   fontSize: 14,
                   fontWeight: 600,
                 },
