@@ -16,7 +16,7 @@ import MyParcels from "./pages/MyParcels";
 import Parcels from "./pages/Parcels";
 import ParcelDetails from "./pages/ParcelDetails";
 
-const isLoggedIn = true;
+const isLoggedIn = false;
 
 const Layout = () => {
   const location = useLocation();

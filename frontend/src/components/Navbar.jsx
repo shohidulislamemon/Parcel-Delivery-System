@@ -5,7 +5,7 @@ const Navbar = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  const isLoggedIn = true;
+  const isLoggedIn = false;
   const username = "Shohidul Islam";
 
   useEffect(() => {

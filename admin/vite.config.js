@@ -10,6 +10,6 @@ export default defineConfig({
   ],
   server: {
     host: 'admin.excelbd.com',
-    port: 4000, // or any port you want
+    port: 4000, 
   },
 })

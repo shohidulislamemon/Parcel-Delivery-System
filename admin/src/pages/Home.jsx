@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { HiArrowSmallUp, HiArrowLongDown } from "react-icons/hi2";
 import { PieChart } from "@mui/x-charts/PieChart";
-import publicRequest from "../requestMethods";
+import {publicRequest} from "../requestMethods";
 
 const Home = () => {
   const [parcels, setParcels] = useState([]);
   const [users, setUsers] = useState([]);
-  // const [parcels,setParcels] = useState([]);
+
+  const usersCount=users.length;
+  const deliveredCount=parcels.filter(parcel=>parcel.status==3).length;
+  const pendingCount=parcels.filter(parcel=>parcel.status==1).length;
+
 
   useEffect(() => {
     const getParcels = async () => {
@@ -43,7 +47,7 @@ const Home = () => {
               <HiArrowSmallUp className="text-[28px] text-green-500" />
               <HiArrowLongDown className="text-[28px] text-red-500" />
             </div>
-            <span className="mt-[20px] text-[18px]">200</span>
+            <span className="mt-[20px] text-[18px]">{usersCount}</span>
           </div>
         </div>
         <div className="flex flex-col text-[#24bfd7] h-[250px] w-[350px] shadow-xl m-[20px]">
@@ -53,7 +57,7 @@ const Home = () => {
               <HiArrowSmallUp className="text-[28px] text-green-500" />
               <HiArrowLongDown className="text-[28px] text-red-500" />
             </div>
-            <span className="mt-[20px] text-[18px]">200</span>
+            <span className="mt-[20px] text-[18px]">{deliveredCount}</span>
           </div>
         </div>
 
@@ -64,7 +68,7 @@ const Home = () => {
               <HiArrowSmallUp className="text-[28px] text-green-500" />
               <HiArrowLongDown className="text-[28px] text-red-500" />
             </div>
-            <span className="mt-[20px] text-[18px]">18</span>
+            <span className="mt-[20px] text-[18px]">{pendingCount}</span>
           </div>
         </div>
       </div>
@@ -74,9 +78,9 @@ const Home = () => {
             series={[
               {
                 data: [
-                  { id: 0, value: 100, label: "Pending " },
+                  { id: 0, value: pendingCount, label: "Pending " },
                   { id: 1, value: 45, label: "In Transit" },
-                  { id: 2, value: 15, label: "Delivered " },
+                  { id: 2, value: deliveredCount, label: "Delivered " },
                   { id: 3, value: 6, label: "Cancelled" },
                   { id: 4, value: 9, label: "Returned" },
                 ],
