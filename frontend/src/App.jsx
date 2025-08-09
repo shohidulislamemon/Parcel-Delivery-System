@@ -36,7 +36,7 @@ const Layout = () => {
 
 const ProtectedRoute = ({ children }) => {
   const currentUser = useSelector((state) => state.user.currentUser);
-  return currentUser ? children : <Navigate to="/login" replace />;
+  return currentUser ? children : <Navigate to="/" replace />;
 };
 
 const PublicOnlyRoute = ({ children }) => {
