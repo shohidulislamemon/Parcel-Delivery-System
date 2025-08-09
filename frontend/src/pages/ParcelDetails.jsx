@@ -16,7 +16,6 @@ const ParcelDetails = () => {
   const [parcel, setParcel] = useState({});
   const location = useLocation();
 
-  // Correct parcelId extraction
   const parcelId = location.pathname.split("/")[2];
 
   useEffect(() => {
@@ -62,7 +61,7 @@ const ParcelDetails = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm sm:text-base">
         <p>
           <span className="font-medium text-gray-400">Tracking ID:</span>{" "}
-          {parcel.trackId}
+          {parcel._id}
         </p>
         <p>
           <span className="font-medium text-gray-400">Status:</span>{" "}
@@ -84,7 +83,7 @@ const ParcelDetails = () => {
         </p>
         <p>
           <span className="font-medium text-gray-400">Weight:</span>{" "}
-          {parcel.weight}
+          {parcel.weight}Kg
         </p>
         <p>
           <span className="font-medium text-gray-400">Cost:</span> {parcel.cost}

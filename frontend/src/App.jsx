@@ -5,7 +5,7 @@ import {
   Navigate,
   Outlet,
   useLocation,
-} from "react-router-dom";
+} from "react-router";
 import { useSelector } from "react-redux";
 
 import Navbar from "./components/Navbar";
@@ -17,45 +17,34 @@ import MyParcels from "./pages/MyParcels";
 import Parcels from "./pages/Parcels";
 import ParcelDetails from "./pages/ParcelDetails";
 
-// Layout component remains mostly the same
 const Layout = () => {
   const location = useLocation();
   const hideLayout = location.pathname === "/login";
 
-  if (hideLayout) {
-    return <Outlet />;
-  }
-
-  return (
-    <div>
+  return hideLayout ? (
+    <Outlet />
+  ) : (
+    <div className="flex flex-col min-h-screen">
       <Navbar />
-      <div className="flex">
-        <div className="w-[100%]">
-          <Outlet />
-        </div>
-      </div>
+      <main className="flex-grow">
+        <Outlet />
+      </main>
       <Footer />
     </div>
   );
 };
 
-// Use Redux state inside these route guards
 const ProtectedRoute = ({ children }) => {
-  const { currentUser } = useSelector((state) => state.user);
+  const currentUser = useSelector((state) => state.user.currentUser);
   return currentUser ? children : <Navigate to="/login" replace />;
 };
 
 const PublicOnlyRoute = ({ children }) => {
-  const { currentUser } = useSelector((state) => state.user);
+  const currentUser = useSelector((state) => state.user.currentUser);
   return !currentUser ? children : <Navigate to="/myparcels" replace />;
 };
 
-// Router config remains the same, but use the route guards that rely on Redux
 const router = createBrowserRouter([
-  {
-    path: "/login",
-    element: <Login />,
-  },
   {
     path: "/",
     element: <Layout />,
@@ -89,6 +78,14 @@ const router = createBrowserRouter([
         ),
       },
     ],
+  },
+  {
+    path: "/login",
+    element: (
+      <PublicOnlyRoute>
+        <Login />
+      </PublicOnlyRoute>
+    ),
   },
 ]);
 

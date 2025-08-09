@@ -1,12 +1,21 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router";
+import { useSelector, useDispatch } from "react-redux";
+import { logOut } from "../redux/userRedux";
 
 const Navbar = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const dispatch = useDispatch();
+  const navigate = useNavigate(); // Initialize useNavigate hook
+  const location = useLocation();
 
-  const isLoggedIn = false;
-  const username = "Shohidul Islam";
+  const user = useSelector((state) => state.user);
+  const isLoggedIn = user?.currentUser;
+  const username = user?.currentUser?.fullname || "Guest";
+
+  const isProfilePage = location.pathname === "/profile";
+  const isMyParcelsPage = location.pathname === "/myparcels";
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -19,52 +28,32 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const handleLogout = () => {
+    dispatch(logOut());
+    navigate("/"); 
+  };
+
   return (
     <header className="h-[80px] bg-[#e4f5fd] flex items-center justify-between px-6 sm:px-10 shadow-md z-50 relative">
-      {/* Logo */}
       <Link to="/">
-        <img
-          src="/logo.png"
-          alt="Site Logo"
-          className="h-[100px] w-auto object-contain"
-        />
+        <img src="/logo.png" alt="Site Logo" className="h-[100px] w-auto object-contain" />
       </Link>
 
-      {/* User section */}
       {isLoggedIn ? (
         <div className="relative flex items-center gap-3" ref={dropdownRef}>
-          <button className="flex  items-center" onClick={() => setDropdownOpen(!dropdownOpen)}>
-            <span className="font-medium hidden sm:block text-gray-800">
-              {username}
-            </span>
-            <img
-              src="/avatar.png"
-              alt="Avatar"
-              className="h-10 w-10 rounded-full object-cover border border-gray-300"
-            />
+          <button className="flex items-center" onClick={() => setDropdownOpen(!dropdownOpen)}>
+            <span className="font-medium hidden sm:block text-gray-800">{username}</span>
+            <img src="/avatar.png" alt="Avatar" className="h-10 w-10 rounded-full object-cover border border-gray-300" />
           </button>
-
-          {/* Dropdown Menu */}
           {dropdownOpen && (
             <div className="absolute bg-[#53ddf5] text-[#fff] top-14 right-0 w-44 font-bold border border-gray-200 rounded-lg shadow-lg text-sm z-50">
-              <Link
-                to="/profile"
-                className="block px-4 py-2 hover:bg-[#66e8ff] transition"
-              >
-                Profile
-              </Link>
-              <Link
-                to="/myparcels"
-                className="block px-4 py-2 hover:bg-[#66e8ff]  transition"
-              >
-                My Parcels
-              </Link>
-              <button
-                onClick={() => alert("Logging out...")}
-                className="w-full text-left px-4 py-2 hover:bg-[#66e8ff]  transition"
-              >
-                Logout
-              </button>
+              {!isProfilePage && (
+                <Link to="/profile" className="block px-4 py-2 hover:bg-[#66e8ff] transition">Profile</Link>
+              )}
+              {!isMyParcelsPage && (
+                <Link to="/myparcels" className="block px-4 py-2 hover:bg-[#66e8ff] transition">My Parcels</Link>
+              )}
+              <button onClick={handleLogout} className="w-full text-left px-4 py-2 hover:bg-[#66e8ff] transition">Logout</button>
             </div>
           )}
         </div>
