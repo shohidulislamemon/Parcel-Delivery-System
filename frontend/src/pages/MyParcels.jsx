@@ -1,57 +1,47 @@
-import React from "react";
-import { Link } from 'react-router';
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router";
 
-
+import {  useSelector } from "react-redux";
+import { publicRequest } from "../requestMethods";
 
 const MyParcels = () => {
+  const [parcels, setParcels] = useState([]);
 
-  const parcels = [
-  {
-    id: "XL123456",
-    recipient: "John Doe",
-    address: "123 Main St, Dhaka",
-    status: "In Transit",
-    expectedDelivery: "Aug 12, 2025",
-  },
-  {
-    id: "XL654321",
-    recipient: "Jane Smith",
-    address: "456 Second Ave, Chattogram",
-    status: "Delivered",
-    expectedDelivery: "Aug 5, 2025",
-  },
-  {
-    id: "XL998877",
-    recipient: "Arafat Rahman",
-    address: "77 Lake View Rd, Sylhet",
-    status: "Returned",
-    expectedDelivery: "Aug 6, 2025",
-  },
-  {
-    id: "XL667788",
-    recipient: "Mila Khan",
-    address: "33 Green Rd, Rajshahi",
-    status: "Returned",
-    expectedDelivery: "Aug 7, 2025",
-  },
-  {
-    id: "XL111222",
-    recipient: "Fahim Morshed",
-    address: "22 College St, Barisal",
-    status: "Pending",
-    expectedDelivery: "Aug 15, 2025",
-  },
-];
-
-const statusColors = {
-  "In Transit": "bg-yellow-500",
-  Delivered: "bg-green-500",
-  Pending: "bg-gray-500",
-  Cancelled: "bg-red-500",
-  Returned: "bg-purple-600",
-};
+  const user = useSelector((state) => state.user);
 
 
+  useEffect(() => {
+    const getParcels = async () => {
+      try {
+        const res = await publicRequest.post("/parcels/me", {
+          email: user.currentUser.email,
+        });
+
+        setParcels(res.data);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    getParcels();
+  }, []);
+
+  console.log(parcels);
+
+  const statusMap = {
+    1: "Pending",
+    2: "In Transit",
+    3: "Delivered",
+    4: "Cancelled",
+    5: "Returned",
+  };
+
+  const statusColors = {
+    "In Transit": "bg-yellow-500",
+    Delivered: "bg-green-500",
+    Pending: "bg-gray-500",
+    Cancelled: "bg-red-500",
+    Returned: "bg-purple-600",
+  };
 
   return (
     <div className="min-h-screen bg-[#2f3041] px-6 py-10 text-white">
@@ -65,27 +55,34 @@ const statusColors = {
           >
             <div>
               <h3 className="text-xl font-semibold">
-                Parcel ID: <span className="text-[#24bfd7]">{parcel.id}</span>
+                Parcel ID: <span className="text-[#24bfd7]">{parcel._id}</span>
               </h3>
-              <p className="text-sm text-gray-400">Sender: {parcel.recipient}</p>
-              <p className="text-sm text-gray-400">Address: {parcel.address}</p>
-              <p className="text-sm text-gray-400">Expected Delivery: {parcel.expectedDelivery}</p>
+              <p className="text-sm text-gray-400">
+                Sender: {parcel.senderName}
+              </p>
+              <p className="text-sm text-gray-400">Address: {parcel.to}</p>
+              <p className="text-sm text-gray-400">
+                Expected Delivery: {parcel.date}
+              </p>
             </div>
 
             <div className="flex flex-col sm:items-end gap-3">
               <span
-                className={`text-sm px-3 py-1 rounded-full font-semibold ${statusColors[parcel.status]}`}
+                className={`text-sm px-3 py-1 rounded-full font-semibold ${
+                  statusColors[statusMap[parcel.status]]
+                }`}
               >
-                {parcel.status}
+                {statusMap[parcel.status]}
               </span>
+
               <div className="flex gap-2">
                 <button className="px-4 py-2 text-sm bg-[#24bfd7] hover:bg-[#1ba6b8] rounded-md font-semibold">
                   Track
                 </button>
-                <Link to="/parcel/123">
-                <button className="px-4 py-2 text-sm border border-gray-400 hover:bg-[#1f1f2f] rounded-md">
-                  View
-                </button>
+                <Link to={`/parcel/${parcel._id}`}>
+                  <button className="px-4 py-2 text-sm border border-gray-400 hover:bg-[#1f1f2f] rounded-md">
+                    View
+                  </button>
                 </Link>
               </div>
             </div>
@@ -96,4 +93,4 @@ const statusColors = {
   );
 };
 
-export default MyParcels
+export default MyParcels;

@@ -62,15 +62,18 @@ const getParcel = async (req, res) => {
 // GET USER PARCEL
 const getUserParcels = async (req, res) => {
   try {
-    const parcels = await Parcel.find({ senderEmail: req.body.email }).sort({
+    const email = req.body.email;
+    if (!email) return res.status(400).json({ error: "Email required" });
+
+    const parcels = await Parcel.find({ senderEmail: email }).sort({
       createdAt: -1,
     });
+
     res.status(200).json(parcels);
   } catch (error) {
     res.status(500).json(error);
   }
 };
-
 // DELETE PARCEL
 const deleteParcel = async (req, res) => {
   try {

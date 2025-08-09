@@ -1,9 +1,47 @@
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
+import { login } from "../redux/apiCalls";
+import { useDispatch, useSelector } from "react-redux";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading]=useState(false);
+  const user =useSelector((state)=>state.user)
+  const error =useSelector((state)=>state.user)
+
+
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const { currentUser } = useSelector((state) => state.user);
+
+  const handleLogin = async () => {
+  if (!email || !password) {
+    alert("Please fill in all fields");
+    return;
+  }
+
+  try {
+    setLoading(true);
+    await login(dispatch, { email, password });
+    setLoading(false);
+  } catch (error) {
+    console.error("Login failed:", error);
+    setLoading(false);
+  }
+};
+
+
+  useEffect(() => {
+  if (currentUser) {
+    navigate("/myparcels");
+  }
+}, [currentUser,navigate]);
+
+console.log(user.currentUser)
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
@@ -34,6 +72,7 @@ const Login = () => {
             <input
               id="email"
               type="email"
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email"
               className="w-full px-4 py-3 bg-[#1f1f2f] text-white rounded-md border border-[#3c3e52] focus:outline-none focus:ring-2 focus:ring-[#24bfd7] placeholder-gray-500"
             />
@@ -47,6 +86,7 @@ const Login = () => {
               <input
                 id="password"
                 type={showPassword ? "text" : "password"}
+                onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
                 className="w-full px-4 py-3 bg-[#1f1f2f] text-white rounded-md border border-[#3c3e52] focus:outline-none focus:ring-2 focus:ring-[#24bfd7] placeholder-gray-500 pr-12"
               />
@@ -61,7 +101,10 @@ const Login = () => {
           </div>
 
           <div className="space-y-3">
-            <button className="w-full text-white py-3 bg-[#1992a4] font-semibold rounded-full hover:bg-[#24bfd7] transition duration-200">
+            <button
+              className="w-full text-white py-3 bg-[#1992a4] font-semibold rounded-full hover:bg-[#24bfd7] transition duration-200"
+              onClick={handleLogin}
+            >
               Login
             </button>
             <Link to="/">

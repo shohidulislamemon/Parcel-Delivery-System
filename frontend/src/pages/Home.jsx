@@ -1,12 +1,9 @@
-import React from 'react';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
+
 import { Link } from 'react-router';
 
 const Home = () => {
   return (
     <div>
-      <Navbar />
 
       <section className="min-h-[80vh] flex flex-col-reverse md:flex-row items-center justify-between gap-10 px-6 sm:px-12 py-12 bg-[#2f3041] text-white">
        
@@ -34,7 +31,6 @@ const Home = () => {
         </div>
       </section>
 
-      <Footer />
     </div>
   );
 };

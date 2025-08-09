@@ -6,6 +6,7 @@ import {
   Outlet,
   useLocation,
 } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -16,8 +17,7 @@ import MyParcels from "./pages/MyParcels";
 import Parcels from "./pages/Parcels";
 import ParcelDetails from "./pages/ParcelDetails";
 
-const isLoggedIn = false;
-
+// Layout component remains mostly the same
 const Layout = () => {
   const location = useLocation();
   const hideLayout = location.pathname === "/login";
@@ -39,14 +39,18 @@ const Layout = () => {
   );
 };
 
+// Use Redux state inside these route guards
 const ProtectedRoute = ({ children }) => {
-  return isLoggedIn ? children : <Navigate to="/login" replace />;
+  const { currentUser } = useSelector((state) => state.user);
+  return currentUser ? children : <Navigate to="/login" replace />;
 };
 
 const PublicOnlyRoute = ({ children }) => {
-  return !isLoggedIn ? children : <Navigate to="/myparcels" replace />;
+  const { currentUser } = useSelector((state) => state.user);
+  return !currentUser ? children : <Navigate to="/myparcels" replace />;
 };
 
+// Router config remains the same, but use the route guards that rely on Redux
 const router = createBrowserRouter([
   {
     path: "/login",
