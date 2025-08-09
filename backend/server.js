@@ -5,6 +5,9 @@ const mongoose = require("mongoose");
 const authRoute=require("./routes/auth.js");
 const userRoute=require("./routes/user.js");
 const parcelRoute=require("./routes/parcel.js");
+const deliveryAgentRoute = require("./routes/deliveryAgent");
+
+
 
 dotenv.config();
 const app = express();
@@ -18,6 +21,7 @@ app.use(express.json());
 app.use("/api/v1/auth",authRoute);
 app.use("/api/v1/users",userRoute);
 app.use("/api/v1/parcels",parcelRoute)
+app.use("/api/v1/delivery-agents", deliveryAgentRoute);
 
 
 

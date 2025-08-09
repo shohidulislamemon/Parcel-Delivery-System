@@ -10,6 +10,9 @@ import Users from "./pages/Users";
 import Login from "./pages/Login";
 import NewParcel from"./pages/NewParcel"
 import NewUser from"./pages/NewUser"
+import DeliveryAgents from "./pages/DeliveryAgents";
+import CreateDeliveryAgent from "./pages/CreateDeliveryAgent"
+import AgentDetails from "./pages/AgentDetails";
 
 const App = () => {
 
@@ -59,6 +62,18 @@ const App = () => {
         {
           path: "/newuser",
           element: <NewUser />,
+        },
+        {
+          path: "/delivery-agents",
+          element: <DeliveryAgents />,
+        },
+        {
+          path: "/addagent",
+          element: <CreateDeliveryAgent/>,
+        },
+         {
+          path: "/delivery-agents/:agentId",
+          element: <AgentDetails />,
         },
       ],
     },

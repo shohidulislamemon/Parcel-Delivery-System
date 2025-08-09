@@ -20,7 +20,7 @@ const menuItems = [
   "divider",
   { icon: <FaBox />, text: "Parcels", to: "/parcels" },
   { icon: <FaUsers />, text: "Users", to: "/users" },
-  { icon: <FaClipboardList />, text: "Orders", to: "/orders" },
+  { icon: <FaClipboardList />, text: "Delivery Agents", to: "/delivery-agents" },
   "divider",
   { icon: <FaElementor />, text: "Elements", to: "/elements" },
   { icon: <FaCog />, text: "Settings", to: "/settings" },

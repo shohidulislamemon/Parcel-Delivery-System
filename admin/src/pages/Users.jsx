@@ -9,7 +9,6 @@ const Users = () => {
     { field: "_id", headerName: "ID", width: 60 },
     { field: "fullname", headerName: "Name", width: 150 },
     { field: "email", headerName: "Email", width: 200 },
-    { field: "role", headerName: "Role", width: 120 },
     { field: "phone", headerName: "Phone", width: 150 },
     { field: "address", headerName: "Address", width: 200 },
     {

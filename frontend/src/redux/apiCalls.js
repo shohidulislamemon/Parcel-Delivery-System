@@ -11,3 +11,14 @@ export const login = async (dispatch, user) => {
     console.error("Login failed:", error);
   }
 };
+
+export const register = async (dispatch, user) => {
+  try {
+    dispatch(loginStart());
+    const res = await publicRequest.post("/auth/register", user);
+  } catch (error) {
+    dispatch(loginFailure());
+    console.error("Registration failed:", error);
+  }
+};
+

@@ -1,5 +1,5 @@
 import React from "react";
-import { FaUser, FaLock, FaFacebookF, FaTwitter } from "react-icons/fa";
+import { FaUser, FaLock, } from "react-icons/fa";
 import Footer from "../components/Footer";
 
 const Login = () => {

@@ -12,9 +12,9 @@ const deleteUser = async (req, res) => {
 
 // GET ALL USERS
 const getAllUsers = async (req, res) => {
-    try {
-        const users = await User.find().sort({ createdAt: -1 });
-        res.status(200).json(users);
+     try {
+        const customers = await User.find({ role: 'customer' }).sort({ createdAt: -1 });
+        res.status(200).json(customers);
     } catch (error) {
         res.status(500).json(error);
     }

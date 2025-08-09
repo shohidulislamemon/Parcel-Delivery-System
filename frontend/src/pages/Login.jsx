@@ -1,47 +1,45 @@
 import { useEffect, useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { Link, useNavigate } from "react-router";
-import { login } from "../redux/apiCalls";
+import { Link, useNavigate } from "react-router"; // Use useNavigate for routing
 import { useDispatch, useSelector } from "react-redux";
+import { login } from "../redux/apiCalls";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading]=useState(false);
-  const user =useSelector((state)=>state.user)
-  const error =useSelector((state)=>state.user)
+  const [loading, setLoading] = useState(false);
 
-
+  const user = useSelector((state) => state.user);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const { currentUser } = useSelector((state) => state.user);
-
   const handleLogin = async () => {
-  if (!email || !password) {
-    alert("Please fill in all fields");
-    return;
-  }
+    if (!email || !password) {
+      alert("Please fill in all fields");
+      return;
+    }
 
-  try {
-    setLoading(true);
-    await login(dispatch, { email, password });
-    setLoading(false);
-  } catch (error) {
-    console.error("Login failed:", error);
-    setLoading(false);
-  }
-};
-
+    try {
+      setLoading(true);
+      await login(dispatch, { email, password });
+      setLoading(false);
+    } catch (error) {
+      console.error("Login failed:", error);
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-  if (currentUser) {
-    navigate("/myparcels");
-  }
-}, [currentUser,navigate]);
-
-console.log(user.currentUser)
+    if (user.currentUser) {
+      // After login, check the role and navigate accordingly
+      if (user.currentUser.role === "delivery-agent") {
+        navigate("/myparcles");  // Redirect to Delivery Agent Dashboard
+      } else {
+        navigate("/myparcels");  // Redirect to Customer's My Parcels
+      }
+    }
+  }, [user.currentUser, navigate]);
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
@@ -105,7 +103,7 @@ console.log(user.currentUser)
               className="w-full text-white py-3 bg-[#1992a4] font-semibold rounded-full hover:bg-[#24bfd7] transition duration-200"
               onClick={handleLogin}
             >
-              Login
+              {loading ? "Logging in..." : "Login"}
             </button>
             <Link to="/">
               <button className="w-full py-3 border border-gray-400 text-gray-300 rounded-full hover:bg-[#1f1f2f] transition duration-200">
@@ -114,12 +112,14 @@ console.log(user.currentUser)
             </Link>
           </div>
 
+
+<Link to="/register">
           <p className="text-sm text-gray-400 text-center">
             Don’t have an account?{" "}
-            <a href="/register" className="text-[#24bfd7] hover:underline">
+            <span  className="text-[#24bfd7] hover:underline">
               Sign up
-            </a>
-          </p>
+            </span>
+          </p></Link>
 
           <p className="text-xs text-gray-500 text-center mt-8">
             By continuing, you agree to our{" "}
