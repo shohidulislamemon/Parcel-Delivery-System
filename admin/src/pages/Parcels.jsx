@@ -25,7 +25,7 @@ const STATUS_COLORS = {
 
 const Parcels = () => {
   const [data, setData] = useState([]);
-  const joinedRoomsRef = useRef(new Set()); // track parcel rooms we joined (fallback)
+  const joinedRoomsRef = useRef(new Set());
 
   const handleDelete = async (id) => {
     try {
@@ -47,14 +47,26 @@ const Parcels = () => {
       { field: "to", headerName: "To", width: 100 },
       { field: "weight", headerName: "Weight (kg)", width: 100 },
       { field: "cost", headerName: "Cost ($)", width: 100 },
+
       {
         field: "assignedAgent",
         headerName: "Assigned Agent",
         width: 260,
         sortable: false,
+        // Give CSV a friendly text using valueGetter
+        valueGetter: (_value, row) => {
+          if (!row) return "";
+          const name = row.assignedAgentName ?? row.assignedAgent?.name ?? null;
+          const email =
+            row.assignedAgentEmail ?? row.assignedAgent?.email ?? null;
+          return name || email
+            ? [name ?? "", email ? `<${email}>` : ""].filter(Boolean).join(" ")
+            : "Not assigned";
+        },
         renderCell: ({ row }) => {
           const name = row.assignedAgentName ?? row.assignedAgent?.name ?? null;
-          const email = row.assignedAgentEmail ?? row.assignedAgent?.email ?? null;
+          const email =
+            row.assignedAgentEmail ?? row.assignedAgent?.email ?? null;
           if (!name && !email) {
             return (
               <span className="inline-block px-2 py-1 rounded-full text-xs font-medium bg-zinc-200 text-zinc-700">
@@ -80,35 +92,48 @@ const Parcels = () => {
           );
         },
       },
+
       {
         field: "status",
         headerName: "Status",
         width: 220,
+        // Provide label for CSV/export
+        valueGetter: ({ row }) => STATUS[Number(row?.status)] ?? "Unknown",
         renderCell: ({ row }) => {
           const code = Number(row?.status);
           const label = STATUS[code] ?? "Unknown";
           const color = STATUS_COLORS[code] ?? "bg-zinc-400";
           return (
-            <span className={`inline-block px-2.5 py-1 rounded-full text-white text-xs font-medium ${color}`}>
+            <span
+              className={`inline-block px-2.5 py-1 rounded-full text-white text-xs font-medium ${color}`}
+            >
               {label}
             </span>
           );
         },
       },
+
       {
         field: "actions",
         headerName: "Actions",
         width: 160,
+        disableExport: true, // <- don't include this column in CSV
         renderCell: (params) => (
           <div className="flex gap-2">
             <Link to={`/parcel/${params.row._id}`}>
-              <button className="w-[70px] bg-[#2596be] text-white text-sm px-3 py-1 rounded hover:bg-[#1d7ea1] transition duration-200">
+              <button
+                className="w-[70px] bg-[#2596be] text-white text-sm px-3 py-1 rounded hover:bg-[#1d7ea1] transition duration-200"
+                onClick={(e) => e.stopPropagation()}
+              >
                 Edit
               </button>
             </Link>
             <button
               className="w-[70px] bg-[#e74c3c] text-white text-sm px-3 py-1 rounded hover:bg-[#c0392b] transition duration-200"
-              onClick={() => handleDelete(params.row._id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(params.row._id);
+              }}
             >
               Delete
             </button>
@@ -126,8 +151,8 @@ const Parcels = () => {
         const res = await publicRequest.get("/parcels");
         const rows = (res.data ?? []).map((p) => ({
           ...p,
-          _id: String(p._id),           // normalize
-          status: Number(p.status ?? 0) // normalize
+          _id: String(p._id),
+          status: Number(p.status ?? 0),
         }));
         setData(rows);
       } catch (error) {
@@ -136,47 +161,45 @@ const Parcels = () => {
     })();
   }, []);
 
-  // 2) ensure we are registered as admin (so server can io.to("admins").emit() to us)
+  // 2) register as admin
   useEffect(() => {
     if (!socket.connected) socket.connect();
-    // Use any admin email string; server requires a non-empty email to register.
     socket.emit("register", { email: "admin@excelbd.com", role: "admin" });
   }, []);
 
-  // 3) live updates via admin broadcast
+  // 3) live updates
   useEffect(() => {
     const onUpdated = (p) => {
       const pid = String(p._id);
       setData((prev) => {
         const idx = prev.findIndex((x) => String(x._id) === pid);
-        if (idx === -1) {
-          // Optional: append if a new parcel appears
+        if (idx === -1)
           return [...prev, { ...p, _id: pid, status: Number(p.status ?? 0) }];
-        }
         const copy = [...prev];
-        copy[idx] = { ...copy[idx], ...p, _id: pid, status: Number(p.status ?? copy[idx].status ?? 0) };
+        copy[idx] = {
+          ...copy[idx],
+          ...p,
+          _id: pid,
+          status: Number(p.status ?? copy[idx].status ?? 0),
+        };
         return copy;
       });
     };
-
     const onDeleted = (p) => {
       const pid = String(p._id);
       setData((prev) => prev.filter((x) => String(x._id) !== pid));
     };
-
     socket.on("parcel:updated", onUpdated);
     socket.on("parcel:deleted", onDeleted);
-
     return () => {
       socket.off("parcel:updated", onUpdated);
       socket.off("parcel:deleted", onDeleted);
     };
   }, []);
 
-  // 4) fallback: also join rooms for all visible parcels (works even if admin broadcast is missing)
+  // 4) join parcel rooms (fallback)
   useEffect(() => {
     const want = new Set(data.map((r) => String(r._id)));
-    // join newly needed rooms
     want.forEach((id) => {
       if (!joinedRoomsRef.current.has(id)) {
         if (socket.connected) socket.emit("joinParcel", id);
@@ -184,16 +207,13 @@ const Parcels = () => {
         joinedRoomsRef.current.add(id);
       }
     });
-    // leave rooms no longer shown
     joinedRoomsRef.current.forEach((id) => {
       if (!want.has(id)) {
         if (socket.connected) socket.emit("leaveParcel", id);
         joinedRoomsRef.current.delete(id);
       }
     });
-
     return () => {
-      // on unmount, leave all joined rooms
       joinedRoomsRef.current.forEach((id) => {
         if (socket.connected) socket.emit("leaveParcel", id);
       });
@@ -211,11 +231,23 @@ const Parcels = () => {
           </button>
         </Link>
       </div>
+
       <DataGrid
         rows={data}
         getRowId={(row) => row._id}
         columns={columns}
         checkboxSelection
+        showToolbar
+        slotProps={{
+          toolbar: {
+           
+            csvOptions: {
+              fileName: "parcels",
+              utf8WithBom: true,
+              allColumns: true,
+            },
+          },
+        }}
       />
     </div>
   );
