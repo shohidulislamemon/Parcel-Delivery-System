@@ -1,9 +1,11 @@
+// src/pages/Parcel.jsx
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { publicRequest } from "../requestMethods";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { socket } from "../socket";
+import QRCode from "react-qr-code";
 
 const STATUS = {
   0: "None",
@@ -83,7 +85,9 @@ const Parcel = () => {
   // Preselect assigned agent by email if present
   useEffect(() => {
     const email =
-      (formData.assignedAgentEmail || parcel.assignedAgentEmail || "").toLowerCase().trim();
+      (formData.assignedAgentEmail || parcel.assignedAgentEmail || "")
+        .toLowerCase()
+        .trim();
     if (email) setSelectedAgentEmail(email);
   }, [formData.assignedAgentEmail, parcel.assignedAgentEmail]);
 
@@ -256,207 +260,226 @@ const Parcel = () => {
   const currentAgentEmail =
     formData.assignedAgentEmail || parcel.assignedAgentEmail || "";
 
+  // ===== QR value (encode the parcel ID only, as you asked) =====
+  const qrValue = parcelId ? String(parcelId) : "";
+
   return (
-    <div className="m-[30px] bg-[#2f3041] p-[30px] rounded-xl shadow-lg text-white">
-      <h2 className="font-semibold text-xl mb-4 text-[#2185d0]">
-        Update Parcel Info
-      </h2>
+    <div className="m-[30px] bg-[#2f3041] p-[30px] rounded-xl shadow-lg text-white relative">
+      {/* Top-left QR code */}
+      {qrValue && (
+        <div className="absolute left-4 top-4">
+          <div className="bg-white rounded-lg p-2 shadow">
+            <QRCode id="parcel-qr" value={qrValue} size={96} level="M" />
+          </div>
+          <div className="text-[10px] text-gray-300 mt-1 max-w-[96px] break-all">
+            #{qrValue}
+          </div>
+        </div>
+      )}
 
-      {/* Status badge + dropdown */}
-      <div className="mb-2 flex items-center gap-3">
-        <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${statusColor}`}>
-          {statusLabel}
-        </span>
+      {/* Title pushed right so it doesn't overlap the QR on small screens */}
+      <div className="pl-[120px] sm:pl-[120px]">
+        <h2 className="font-semibold text-xl mb-4 text-[#2185d0]">
+          Update Parcel Info
+        </h2>
 
-        <select
-          className="text-sm border border-[#3b3c4e] bg-[#3b3c4e] text-white rounded px-2 py-1 outline-none hover:bg-[#45465a] disabled:opacity-60"
-          value=""
-          onChange={(e) => handleStatusChange(Number(e.target.value))}
-          disabled={savingStatus}
-        >
-          <option value="" disabled>
-            Set Pending…
-          </option>
-          <option value={1}>Pending</option>
-        </select>
+        {/* Status badge + dropdown */}
+        <div className="mb-2 flex items-center gap-3">
+          <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${statusColor}`}>
+            {statusLabel}
+          </span>
 
-        {savingStatus && <span className="text-xs text-gray-300">Saving…</span>}
-      </div>
-
-      {/* Assign Delivery Agent */}
-      <div className="mb-6">
-        <label className="block mb-2 text-sm text-gray-300">
-          Assign Delivery Agent
-        </label>
-        <div className="flex items-center gap-3">
           <select
             className="text-sm border border-[#3b3c4e] bg-[#3b3c4e] text-white rounded px-2 py-1 outline-none hover:bg-[#45465a] disabled:opacity-60"
-            value={selectedAgentEmail}
-            onChange={(e) => handleAssignAgent(e.target.value)}
-            disabled={savingAssign || agents.length === 0}
+            value=""
+            onChange={(e) => handleStatusChange(Number(e.target.value))}
+            disabled={savingStatus}
           >
-            <option value="">
-              {agents.length ? "Select agent…" : "Loading agents…"}
+            <option value="" disabled>
+              Set Pending…
             </option>
-            {agents.map((a) => (
-              <option key={a.email} value={a.email}>
-                {a.name}
-              </option>
-            ))}
+            <option value={1}>Pending</option>
           </select>
 
-          {/* Show current assignment */}
-          <div className="text-xs text-gray-300">
-            {currentAgentEmail ? (
-              <>
-                <span className="font-medium">{currentAgentName || "—"}</span>{" "}
-                (<span className="underline">{currentAgentEmail}</span>)
-              </>
-            ) : (
-              <span>Not assigned</span>
+          {savingStatus && <span className="text-xs text-gray-300">Saving…</span>}
+        </div>
+
+        {/* Assign Delivery Agent */}
+        <div className="mb-6">
+          <label className="block mb-2 text-sm text-gray-300">
+            Assign Delivery Agent
+          </label>
+          <div className="flex items-center gap-3">
+            <select
+              className="text-sm border border-[#3b3c4e] bg-[#3b3c4e] text-white rounded px-2 py-1 outline-none hover:bg-[#45465a] disabled:opacity-60"
+              value={selectedAgentEmail}
+              onChange={(e) => handleAssignAgent(e.target.value)}
+              disabled={savingAssign || agents.length === 0}
+            >
+              <option value="">
+                {agents.length ? "Select agent…" : "Loading agents…"}
+              </option>
+              {agents.map((a) => (
+                <option key={a.email} value={a.email}>
+                  {a.name}
+                </option>
+              ))}
+            </select>
+
+            {/* Show current assignment */}
+            <div className="text-xs text-gray-300">
+              {currentAgentEmail ? (
+                <>
+                  <span className="font-medium">{currentAgentName || "—"}</span>{" "}
+                  (<span className="underline">{currentAgentEmail}</span>)
+                </>
+              ) : (
+                <span>Not assigned</span>
+              )}
+            </div>
+
+            {savingAssign && (
+              <span className="text-xs text-gray-300">Saving…</span>
             )}
           </div>
-
-          {savingAssign && (
-            <span className="text-xs text-gray-300">Saving…</span>
-          )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-6">
-        {/* From */}
-        <div className="flex flex-col">
-          <label className="mb-1">From</label>
-          <input
-            type="text"
-            name="from"
-            value={formData.from || ""}
-            onChange={handleChange}
-            className="bg-[#3b3c4e] text-white p-2 rounded outline-none focus:ring-2 focus:ring-[#2185d0]"
-          />
         </div>
 
-        {/* To */}
-        <div className="flex flex-col">
-          <label className="mb-1">To</label>
-          <input
-            type="text"
-            name="to"
-            value={formData.to || ""}
-            onChange={handleChange}
-            className="bg-[#3b3c4e] text-white p-2 rounded outline-none focus:ring-2 focus:ring-[#2185d0]"
-          />
-        </div>
+        {/* Form grid */}
+        <div className="grid grid-cols-2 gap-6">
+          {/* From */}
+          <div className="flex flex-col">
+            <label className="mb-1">From</label>
+            <input
+              type="text"
+              name="from"
+              value={formData.from || ""}
+              onChange={handleChange}
+              className="bg-[#3b3c4e] text-white p-2 rounded outline-none focus:ring-2 focus:ring-[#2185d0]"
+            />
+          </div>
 
-        {/* Sender Name */}
-        <div className="flex flex-col">
-          <label className="mb-1">Sender Name</label>
-          <input
-            type="text"
-            name="senderName"
-            value={formData.senderName || ""}
-            onChange={handleChange}
-            className="bg-[#3b3c4e] text-white p-2 rounded outline-none focus:ring-2 focus:ring-[#2185d0]"
-          />
-        </div>
+          {/* To */}
+          <div className="flex flex-col">
+            <label className="mb-1">To</label>
+            <input
+              type="text"
+              name="to"
+              value={formData.to || ""}
+              onChange={handleChange}
+              className="bg-[#3b3c4e] text-white p-2 rounded outline-none focus:ring-2 focus:ring-[#2185d0]"
+            />
+          </div>
 
-        {/* Sender Email */}
-        <div className="flex flex-col">
-          <label className="mb-1">Sender Email</label>
-          <input
-            type="email"
-            name="senderEmail"
-            value={formData.senderEmail || ""}
-            onChange={handleChange}
-            className="bg-[#3b3c4e] text-white p-2 rounded outline-none focus:ring-2 focus:ring-[#2185d0]"
-          />
-        </div>
+          {/* Sender Name */}
+          <div className="flex flex-col">
+            <label className="mb-1">Sender Name</label>
+            <input
+              type="text"
+              name="senderName"
+              value={formData.senderName || ""}
+              onChange={handleChange}
+              className="bg-[#3b3c4e] text-white p-2 rounded outline-none focus:ring-2 focus:ring-[#2185d0]"
+            />
+          </div>
 
-        {/* Recipient Name */}
-        <div className="flex flex-col">
-          <label className="mb-1">Recipient Name</label>
-          <input
-            type="text"
-            name="recipientName"
-            value={formData.recipientName || ""}
-            onChange={handleChange}
-            className="bg-[#3b3c4e] text-white p-2 rounded outline-none focus:ring-2 focus:ring-[#2185d0]"
-          />
-        </div>
+          {/* Sender Email */}
+          <div className="flex flex-col">
+            <label className="mb-1">Sender Email</label>
+            <input
+              type="email"
+              name="senderEmail"
+              value={formData.senderEmail || ""}
+              onChange={handleChange}
+              className="bg-[#3b3c4e] text-white p-2 rounded outline-none focus:ring-2 focus:ring-[#2185d0]"
+            />
+          </div>
 
-        {/* Recipient Email */}
-        <div className="flex flex-col">
-          <label className="mb-1">Recipient Email</label>
-          <input
-            type="email"
-            name="recipientEmail"
-            value={formData.recipientEmail || ""}
-            onChange={handleChange}
-            className="bg-[#3b3c4e] text-white p-2 rounded outline-none focus:ring-2 focus:ring-[#2185d0]"
-          />
-        </div>
+          {/* Recipient Name */}
+          <div className="flex flex-col">
+            <label className="mb-1">Recipient Name</label>
+            <input
+              type="text"
+              name="recipientName"
+              value={formData.recipientName || ""}
+              onChange={handleChange}
+              className="bg-[#3b3c4e] text-white p-2 rounded outline-none focus:ring-2 focus:ring-[#2185d0]"
+            />
+          </div>
 
-        {/* Weight */}
-        <div className="flex flex-col">
-          <label className="mb-1">Weight (kg)</label>
-          <input
-            type="number"
-            name="weight"
-            value={formData.weight || ""}
-            onChange={handleChange}
-            className="bg-[#3b3c4e] text-white p-2 rounded outline-none focus:ring-2 focus:ring-[#2185d0]"
-          />
-        </div>
+          {/* Recipient Email */}
+          <div className="flex flex-col">
+            <label className="mb-1">Recipient Email</label>
+            <input
+              type="email"
+              name="recipientEmail"
+              value={formData.recipientEmail || ""}
+              onChange={handleChange}
+              className="bg-[#3b3c4e] text-white p-2 rounded outline-none focus:ring-2 focus:ring-[#2185d0]"
+            />
+          </div>
 
-        {/* Cost */}
-        <div className="flex flex-col">
-          <label className="mb-1">Cost ($)</label>
-          <input
-            type="number"
-            name="cost"
-            value={formData.cost || ""}
-            onChange={handleChange}
-            className="bg-[#3b3c4e] text-white p-2 rounded outline-none focus:ring-2 focus:ring-[#2185d0]"
-          />
-        </div>
+          {/* Weight */}
+          <div className="flex flex-col">
+            <label className="mb-1">Weight (kg)</label>
+            <input
+              type="number"
+              name="weight"
+              value={formData.weight || ""}
+              onChange={handleChange}
+              className="bg-[#3b3c4e] text-white p-2 rounded outline-none focus:ring-2 focus:ring-[#2185d0]"
+            />
+          </div>
 
-        {/* Note (read-only) */}
-        <div className="flex flex-col col-span-2">
-          <label className="mb-1">Note</label>
-          <div className="bg-[#3b3c4e] text-white p-2 rounded min-h-[80px] whitespace-pre-wrap">
-            {formData.note || "—"}
+          {/* Cost */}
+          <div className="flex flex-col">
+            <label className="mb-1">Cost ($)</label>
+            <input
+              type="number"
+              name="cost"
+              value={formData.cost || ""}
+              onChange={handleChange}
+              className="bg-[#3b3c4e] text-white p-2 rounded outline-none focus:ring-2 focus:ring-[#2185d0]"
+            />
+          </div>
+
+          {/* Note (read-only) */}
+          <div className="flex flex-col col-span-2">
+            <label className="mb-1">Note</label>
+            <div className="bg-[#3b3c4e] text-white p-2 rounded min-h-[80px] whitespace-pre-wrap">
+              {formData.note || "—"}
+            </div>
+          </div>
+
+          {/* Feedback (read-only) */}
+          <div className="flex flex-col col-span-2">
+            <label className="mb-1">Feedback</label>
+            <div className="bg-[#3b3c4e] text-white p-2 rounded min-h-[80px] whitespace-pre-wrap">
+              {formData.feedback || "—"}
+            </div>
+          </div>
+
+          {/* Date */}
+          <div className="flex flex-col">
+            <label className="mb-1">Date</label>
+            <input
+              type="date"
+              name="date"
+              value={formData.date ? String(formData.date).slice(0, 10) : ""}
+              onChange={handleChange}
+              className="bg-[#3b3c4e] text-white p-2 rounded outline-none focus:ring-2 focus:ring-[#2185d0]"
+            />
           </div>
         </div>
 
-        {/* Feedback (read-only) */}
-        <div className="flex flex-col col-span-2">
-          <label className="mb-1">Feedback</label>
-          <div className="bg-[#3b3c4e] text-white p-2 rounded min-h-[80px] whitespace-pre-wrap">
-            {formData.feedback || "—"}
-          </div>
+        <div className="mt-8">
+          <button
+            onClick={handleUpdate}
+            className="bg-[#2185d0] px-6 py-2 rounded text-white hover:bg-[#1a6fb2] transition"
+          >
+            Update
+          </button>
+          <ToastContainer />
         </div>
-
-        {/* Date */}
-        <div className="flex flex-col">
-          <label className="mb-1">Date</label>
-          <input
-            type="date"
-            name="date"
-            value={formData.date ? String(formData.date).slice(0, 10) : ""}
-            onChange={handleChange}
-            className="bg-[#3b3c4e] text-white p-2 rounded outline-none focus:ring-2 focus:ring-[#2185d0]"
-          />
-        </div>
-      </div>
-
-      <div className="mt-8">
-        <button
-          onClick={handleUpdate}
-          className="bg-[#2185d0] px-6 py-2 rounded text-white hover:bg-[#1a6fb2] transition"
-        >
-          Update
-        </button>
-        <ToastContainer />
       </div>
     </div>
   );
