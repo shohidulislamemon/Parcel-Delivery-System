@@ -16,7 +16,7 @@ const renderTemplate = (templatePath, data) => {
 };
 
 const SendParcelDeliveredEmail = async () => {
-    const parcels = await Parcel.find({ status: 2 });
+    const parcels = await Parcel.find({ status: 3 });
 
     if (parcels.length > 0) {
         for (let parcel of parcels) {
@@ -56,7 +56,7 @@ const SendParcelDeliveredEmail = async () => {
 
                 // Update status to 3
                 await Parcel.findByIdAndUpdate(parcel._id, {
-                    $set: { status: 3 },
+                    $set: { status: 4 },
                 });
             } catch (error) {
                 console.error("❌ Error sending delivery emails:", error);

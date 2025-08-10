@@ -9,9 +9,12 @@ const {
   deleteDeliveryAgent,
 } = require("../controllers/deliveryAgent");
 const { verifyAdmin } = require("../middleware/verifyToken");
+const { getDeliveryAgentParcels } = require("../controllers/parcel");
 
-// Create delivery agent
+// create agent
 router.post("/", createDeliveryAgent);
+
+router.post("/me", getDeliveryAgentParcels);
 
 // Get a specific delivery agent by ID
 router.get("/:id", getDeliveryAgent);

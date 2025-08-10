@@ -3,17 +3,15 @@ const jwt = require("jsonwebtoken");
 
 dotenv.config();
 
-// Middleware to verify if the user is authenticated
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers.token;
   if (authHeader) {
-    // Extract token from Authorization header
     const token = authHeader.split(" ")[1]; // split by space to get token
     jwt.verify(token, process.env.JWT_SEC, (err, user) => {
       if (err) {
         return res.status(403).json("Token is not valid");
       }
-      req.user = user; // Attach user info to the request object
+      req.user = user; 
       next();
     });
   } else {
@@ -21,7 +19,6 @@ const verifyToken = (req, res, next) => {
   }
 };
 
-// Middleware to verify if the user is authenticated and authorized (admin only)
 const verifyTokenAndAuthorization = (req, res, next) => {
   verifyToken(req, res, () => {
     if (req.user.role === "admin") {
@@ -33,7 +30,6 @@ const verifyTokenAndAuthorization = (req, res, next) => {
   });
 };
 
-// Middleware to verify if the user has 'admin' role
 const verifyAdmin = (req, res, next) => {
   if (req.user.role !== "admin") {
     return res.status(403).json("You are not authorized");

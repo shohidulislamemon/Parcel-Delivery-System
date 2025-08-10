@@ -1,11 +1,5 @@
 import React from "react";
-import {
-  RouterProvider,
-  createBrowserRouter,
-  Navigate,
-  Outlet,
-  useLocation,
-} from "react-router";
+import { RouterProvider, createBrowserRouter, Navigate, Outlet, useLocation } from "react-router";
 import { useSelector } from "react-redux";
 
 import Navbar from "./components/Navbar";
@@ -17,6 +11,7 @@ import Register from "./pages/Register";
 import MyParcels from "./pages/MyParcels";
 import Parcels from "./pages/Parcels";
 import ParcelDetails from "./pages/ParcelDetails";
+import BookParcel from "./pages/BookParcel"; // Import the BookParcel component
 
 // Layout for all routes, except login and register pages
 const Layout = () => {
@@ -90,6 +85,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute allowedRoles={["customer", "delivery-agent"]}>
             <ParcelDetails />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "bookparcel", // Add the bookparcel route for customer
+        element: (
+          <ProtectedRoute allowedRoles={["customer"]}>
+            <BookParcel />
           </ProtectedRoute>
         ),
       },

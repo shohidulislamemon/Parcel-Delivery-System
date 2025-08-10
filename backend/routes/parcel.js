@@ -1,26 +1,31 @@
+// routes/parcels.js
 const express = require("express");
-const { createParcel, getAllParcels, updateParcel, getParcel, getUserParcels, deleteParcel } = require("../controllers/parcel");
-const {  verifyToken, verifyTokenAndAuthorization } = require("../middleware/verifyToken");
+const {
+  createParcel,
+  getAllParcels,
+  updateParcel,
+  getParcel,
+  getUserParcels,
+  deleteParcel,
+  assignParcelToAgent,
+  unassignParcel,
+} = require("../controllers/parcel");
+
 const router = express.Router();
 
-// ADDING PARCEL
-// router.post("/",verifyToken ,createParcel);
-router.post("/" ,createParcel);
+router.post("/", createParcel);
+router.get("/", getAllParcels);
+router.put("/:id", updateParcel);
 
-// GET ALL PARCEL
-// router.get("/",verifyTokenAndAuthorization,getAllParcels);
-router.get("/",getAllParcels);
+router.get("/find/:id", getParcel);
+router.post("/me", getUserParcels);
 
-// UPDATE PARCEL
-router.put("/:id",updateParcel);
 
-// GET A SPECIFIC PARCEL
-router.get("/find/:id",getParcel)
 
-// GET USER PARCEL
-router.post("/me",getUserParcels)
+// NEW: assign/unassign
+router.patch("/:id/assign", assignParcelToAgent);
+router.patch("/:id/unassign", unassignParcel);
 
-// DELETE PARCEL
-router.delete("/:id",deleteParcel)
+router.delete("/:id", deleteParcel);
 
 module.exports = router;

@@ -81,7 +81,6 @@ const Home = () => {
                   { id: 0, value: pendingCount, label: "Pending " },
                   { id: 1, value: 45, label: "In Transit" },
                   { id: 2, value: deliveredCount, label: "Delivered " },
-                  { id: 3, value: 6, label: "Cancelled" },
                   { id: 4, value: 9, label: "Returned" },
                 ],
                 innerRadius: 30,

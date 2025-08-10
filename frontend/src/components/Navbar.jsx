@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { Link, useLocation, useNavigate } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router-dom"; // Use 'react-router-dom' for routing
 import { useSelector, useDispatch } from "react-redux";
 import { logOut } from "../redux/userRedux";
 
@@ -13,6 +13,7 @@ const Navbar = () => {
   const user = useSelector((state) => state.user);
   const isLoggedIn = user?.currentUser;
   const username = user?.currentUser?.fullname || "Guest";
+  const userRole = user?.currentUser?.role;
 
   const isProfilePage = location.pathname === "/profile";
   const isMyParcelsPage = location.pathname === "/myparcels";
@@ -52,6 +53,9 @@ const Navbar = () => {
               )}
               {!isMyParcelsPage && (
                 <Link to="/myparcels" className="block px-4 py-2 hover:bg-[#66e8ff] transition">My Parcels</Link>
+              )}
+              {userRole === "customer" && (
+                <Link to="/bookparcel" className="block px-4 py-2 hover:bg-[#66e8ff] transition">Book Parcel</Link>  
               )}
               <button onClick={handleLogout} className="w-full text-left px-4 py-2 hover:bg-[#66e8ff] transition">Logout</button>
             </div>

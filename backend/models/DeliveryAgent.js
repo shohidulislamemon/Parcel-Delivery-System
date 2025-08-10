@@ -21,7 +21,7 @@ const DeliveryAgentSchema = new mongoose.Schema(
         },
         status: {
             type: Number,
-            default: 0, // 0 for inactive, 1 for active
+            default: 0,
         },
         division: {
             type: String,
