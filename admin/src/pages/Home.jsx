@@ -8,7 +8,7 @@ const Home = () => {
   const [users, setUsers] = useState([]);
 
   const usersCount=users.length;
-  const deliveredCount=parcels.filter(parcel=>parcel.status==3).length;
+  const deliveredCount=parcels.filter(parcel=>parcel.status==4).length;
   const pendingCount=parcels.filter(parcel=>parcel.status==1).length;
 
 

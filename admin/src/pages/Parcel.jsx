@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import { publicRequest } from "../requestMethods";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { socket } from "../socket";
 
 const STATUS = {
   0: "None",
@@ -12,14 +13,6 @@ const STATUS = {
   4: "Delivered & Mail sent",
   5: "Returned",
 };
-
-const STATUS_OPTIONS = [
-  { value: 1, label: "Pending" },
-  { value: 2, label: "Assigned to Delivery Agent" },
-  { value: 3, label: "Delivered" },
-  { value: 4, label: "Delivered & Mail sent" },
-  { value: 5, label: "Returned" },
-];
 
 const STATUS_COLORS = {
   0: "bg-slate-500",
@@ -35,7 +28,7 @@ const emailToName = (email) => {
   if (!email) return "";
   const local = String(email).split("@")[0];
   return local
-    .replace(/[._-]+/g, " ")        // dots/underscores/dashes -> spaces
+    .replace(/[._-]+/g, " ")
     .split(" ")
     .filter(Boolean)
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
@@ -66,17 +59,17 @@ const Parcel = () => {
         console.log(error);
       }
     };
-    getParcel();
+    if (parcelId) getParcel();
   }, [parcelId]);
 
-  // Load delivery agents (expects GET /delivery-agents → [{ email, (optional) name }])
+  // Load delivery agents
   useEffect(() => {
     const getAgents = async () => {
       try {
         const res = await publicRequest.get("/delivery-agents");
         const list = (res.data || []).map((a) => ({
           ...a,
-          name: a.name || emailToName(a.email), // derive if missing
+          name: a.name || emailToName(a.email),
           email: String(a.email || "").toLowerCase().trim(),
         }));
         setAgents(list);
@@ -87,12 +80,44 @@ const Parcel = () => {
     getAgents();
   }, []);
 
-  // Preselect the assigned agent by email if present
+  // Preselect assigned agent by email if present
   useEffect(() => {
     const email =
       (formData.assignedAgentEmail || parcel.assignedAgentEmail || "").toLowerCase().trim();
     if (email) setSelectedAgentEmail(email);
   }, [formData.assignedAgentEmail, parcel.assignedAgentEmail]);
+
+  // Join specific parcel room and listen for updates (also rejoin on reconnect)
+  useEffect(() => {
+    if (!parcelId) return;
+
+    const pid = String(parcelId);
+    const join = () => socket.emit("joinParcel", pid);
+    const leave = () => socket.emit("leaveParcel", pid);
+
+    if (socket.connected) join();
+    else socket.on("connect", join);
+
+    const onUpdated = (p) => {
+      if (String(p._id) !== pid) return;
+      setParcel((prev) => ({ ...prev, ...p }));
+      setFormData((prev) => ({ ...prev, ...p }));
+    };
+    const onDeleted = (p) => {
+      if (String(p._id) !== pid) return;
+      toast.warn("This parcel was deleted.");
+    };
+
+    socket.on("parcel:updated", onUpdated);
+    socket.on("parcel:deleted", onDeleted);
+
+    return () => {
+      socket.off("connect", join);
+      socket.off("parcel:updated", onUpdated);
+      socket.off("parcel:deleted", onDeleted);
+      if (socket.connected) leave();
+    };
+  }, [parcelId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -102,34 +127,68 @@ const Parcel = () => {
     }));
   };
 
-  // ✅ Only change status (sends numeric code 1..4) using PUT /parcels/:id
+  // Only action from dropdown is to set Pending (1) and clear assignment
   const handleStatusChange = async (nextCode) => {
-    const prev = Number(formData.status ?? parcel.status ?? 0);
     const next = Number(nextCode);
-    if (next === prev) return;
+    if (next !== 1) return;
+
+    const prev = Number(formData.status ?? parcel.status ?? 0);
+    if (next === prev && !(formData.assignedAgentEmail || parcel.assignedAgentEmail)) return;
 
     setSavingStatus(true);
-    setFormData((p) => ({ ...p, status: next }));
+
+    const payload = {
+      status: 1,
+      assignedAgentName: null,
+      assignedAgentEmail: null,
+      assignedAt: null,
+    };
+
+    // optimistic UI
+    const prevSnapshot = {
+      status: formData.status,
+      assignedAgentName: formData.assignedAgentName,
+      assignedAgentEmail: formData.assignedAgentEmail,
+      assignedAt: formData.assignedAt,
+    };
+    setFormData((p) => ({ ...p, ...payload }));
+    setSelectedAgentEmail("");
 
     try {
-      await publicRequest.put(`/parcels/${parcelId}`, { status: next });
-      toast.success("Status updated");
-      setParcel((p) => ({ ...p, status: next }));
+      await publicRequest.put(`/parcels/${parcelId}`, payload);
+      setParcel((p) => ({ ...p, ...payload }));
+      toast.success("Status set to Pending and agent unassigned");
     } catch (err) {
       console.error(err);
-      setFormData((p) => ({ ...p, status: prev }));
-      toast.error("Failed to update status");
+      // rollback
+      setFormData((p) => ({ ...p, ...prevSnapshot }));
+      setSelectedAgentEmail(prevSnapshot.assignedAgentEmail || "");
+      toast.error("Failed to set Pending");
     } finally {
       setSavingStatus(false);
     }
   };
 
-  // ✅ Assign delivery agent by email: show only name in UI, update name+email (+ set status=2)
+  // Assign delivery agent by email → set name+email and status=2
   const handleAssignAgent = async (agentEmail) => {
     const email = String(agentEmail || "").toLowerCase().trim();
+
+    // ignore placeholder/empty choice
+    if (!email) {
+      setSelectedAgentEmail("");
+      return;
+    }
+
+    // no-op if already assigned to this agent and status is 2
+    const alreadyAssigned =
+      (formData.assignedAgentEmail || parcel.assignedAgentEmail || "")
+        .toLowerCase()
+        .trim() === email &&
+      Number(formData.status ?? parcel.status ?? 0) === 2;
+    if (alreadyAssigned) return;
+
     setSelectedAgentEmail(email);
 
-    // find agent; if no name provided by API, derive from email
     const agent = agents.find((a) => a.email === email);
     const derivedName = agent?.name || emailToName(email);
 
@@ -151,7 +210,7 @@ const Parcel = () => {
     try {
       await publicRequest.put(`/parcels/${parcelId}`, payload);
       setParcel((p) => ({ ...p, ...payload }));
-      toast.success("Agent assigned");
+      toast.success("Agent assigned and status set to Assigned");
     } catch (err) {
       console.error(err);
       // rollback
@@ -203,26 +262,24 @@ const Parcel = () => {
         Update Parcel Info
       </h2>
 
-      {/* Status control: badge + dropdown (sends 1..4) */}
-      <div className="mb-6 flex items-center gap-3">
+      {/* Status badge + dropdown */}
+      <div className="mb-2 flex items-center gap-3">
         <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${statusColor}`}>
           {statusLabel}
         </span>
+
         <select
           className="text-sm border border-[#3b3c4e] bg-[#3b3c4e] text-white rounded px-2 py-1 outline-none hover:bg-[#45465a] disabled:opacity-60"
-          value={statusCode >= 1 && statusCode <= 4 ? statusCode : ""}
+          value=""
           onChange={(e) => handleStatusChange(Number(e.target.value))}
           disabled={savingStatus}
         >
           <option value="" disabled>
-            Change status…
+            Set Pending…
           </option>
-          {STATUS_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
+          <option value={1}>Pending</option>
         </select>
+
         {savingStatus && <span className="text-xs text-gray-300">Saving…</span>}
       </div>
 
@@ -363,28 +420,20 @@ const Parcel = () => {
           />
         </div>
 
-        {/* Note */}
+        {/* Note (read-only) */}
         <div className="flex flex-col col-span-2">
           <label className="mb-1">Note</label>
-          <textarea
-            name="note"
-            value={formData.note || ""}
-            onChange={handleChange}
-            placeholder="Optional note..."
-            className="bg-[#3b3c4e] text-white p-2 rounded outline-none focus:ring-2 focus:ring-[#2185d0]"
-          ></textarea>
+          <div className="bg-[#3b3c4e] text-white p-2 rounded min-h-[80px] whitespace-pre-wrap">
+            {formData.note || "—"}
+          </div>
         </div>
 
-        {/* Feedback */}
+        {/* Feedback (read-only) */}
         <div className="flex flex-col col-span-2">
           <label className="mb-1">Feedback</label>
-          <textarea
-            name="feedback"
-            value={formData.feedback || ""}
-            onChange={handleChange}
-            placeholder="Feedback..."
-            className="bg-[#3b3c4e] text-white p-2 rounded outline-none focus:ring-2 focus:ring-[#2185d0]"
-          ></textarea>
+          <div className="bg-[#3b3c4e] text-white p-2 rounded min-h-[80px] whitespace-pre-wrap">
+            {formData.feedback || "—"}
+          </div>
         </div>
 
         {/* Date */}

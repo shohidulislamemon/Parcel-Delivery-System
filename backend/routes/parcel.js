@@ -1,30 +1,35 @@
-// routes/parcels.js
+
 const express = require("express");
 const {
   createParcel,
   getAllParcels,
   updateParcel,
-  getParcel,
-  getUserParcels,
-  deleteParcel,
+  updateParcelStatus,     // optional
   assignParcelToAgent,
   unassignParcel,
+  getParcel,
+  getUserParcels,
+  getDeliveryAgentParcels,
+  deleteParcel,
 } = require("../controllers/parcel");
 
 const router = express.Router();
 
 router.post("/", createParcel);
 router.get("/", getAllParcels);
-router.put("/:id", updateParcel);
-
 router.get("/find/:id", getParcel);
-router.post("/me", getUserParcels);
 
+router.put("/:id", updateParcel);
+router.patch("/:id/status", updateParcelStatus); // optional, if you want a clean status-only path
 
-
-// NEW: assign/unassign
 router.patch("/:id/assign", assignParcelToAgent);
 router.patch("/:id/unassign", unassignParcel);
+
+router.post("/me", getUserParcels);
+// NOTE: your deliveryAgent routes already mount /api/v1/delivery-agents
+// and call getDeliveryAgentParcels at POST /delivery-agents/me
+// Only add this if you also want it under /parcels:
+// router.post("/agent/me", getDeliveryAgentParcels);
 
 router.delete("/:id", deleteParcel);
 
