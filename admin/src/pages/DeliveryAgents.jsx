@@ -1,6 +1,6 @@
 import { DataGrid } from "@mui/x-data-grid";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { publicRequest } from "../requestMethods";
 
 const DeliveryAgents = () => {

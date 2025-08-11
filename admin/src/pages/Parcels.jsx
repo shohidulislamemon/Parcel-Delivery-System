@@ -1,6 +1,7 @@
 // src/pages/Parcels.jsx
 import { DataGrid } from "@mui/x-data-grid";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+// React Router v6:
 import { Link } from "react-router-dom";
 import { publicRequest } from "../requestMethods";
 import { socket } from "../socket";
@@ -27,14 +28,51 @@ const Parcels = () => {
   const [data, setData] = useState([]);
   const joinedRoomsRef = useRef(new Set());
 
-  const handleDelete = async (id) => {
+  // optimistic delete state
+  const [deletingIds, setDeletingIds] = useState(() => new Set());
+  const deletedIdsRef = useRef(new Set()); // ignore stale updates for these
+  const rollbackRef = useRef(null); // snapshot to restore on failure
+
+  const handleDelete = useCallback(async (id) => {
+    const safeId = String(id).trim();
+    const encodedId = encodeURIComponent(safeId);
+
+    // mark as deleting & record as locally deleted
+    setDeletingIds((prev) => {
+      const next = new Set(prev);
+      next.add(safeId);
+      return next;
+    });
+    deletedIdsRef.current.add(safeId);
+
+    // optimistic UI: remove immediately (keep snapshot)
+    setData((prev) => {
+      rollbackRef.current = prev;
+      return prev.filter((p) => String(p._id) !== safeId);
+    });
+
     try {
-      await publicRequest.delete(`/parcels/${id}`);
-      setData((prev) => prev.filter((parcel) => parcel._id !== id));
+      await publicRequest.delete(`/parcels/${encodedId}`);
     } catch (error) {
-      console.log(error);
+      const status = error?.response?.status;
+      const body = error?.response?.data;
+      console.error("DELETE /parcels/:id failed:", { status, body, error });
+
+      // rollback UI
+      if (rollbackRef.current) {
+        setData(rollbackRef.current);
+        rollbackRef.current = null;
+      }
+      // since it failed, allow future updates again
+      deletedIdsRef.current.delete(safeId);
+    } finally {
+      setDeletingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(safeId);
+        return next;
+      });
     }
-  };
+  }, []);
 
   const columns = useMemo(
     () => [
@@ -53,8 +91,8 @@ const Parcels = () => {
         headerName: "Assigned Agent",
         width: 260,
         sortable: false,
-        // Give CSV a friendly text using valueGetter
-        valueGetter: (_value, row) => {
+        valueGetter: (params) => {
+          const row = params?.row;
           if (!row) return "";
           const name = row.assignedAgentName ?? row.assignedAgent?.name ?? null;
           const email =
@@ -97,8 +135,7 @@ const Parcels = () => {
         field: "status",
         headerName: "Status",
         width: 220,
-        // Provide label for CSV/export
-        valueGetter: ({ row }) => STATUS[Number(row?.status)] ?? "Unknown",
+        valueGetter: (params) => STATUS[Number(params?.row?.status)] ?? "Unknown",
         renderCell: ({ row }) => {
           const code = Number(row?.status);
           const label = STATUS[code] ?? "Unknown";
@@ -116,32 +153,41 @@ const Parcels = () => {
       {
         field: "actions",
         headerName: "Actions",
-        width: 160,
-        disableExport: true, // <- don't include this column in CSV
-        renderCell: (params) => (
-          <div className="flex gap-2">
-            <Link to={`/parcel/${params.row._id}`}>
-              <button
-                className="w-[70px] bg-[#2596be] text-white text-sm px-3 py-1 rounded hover:bg-[#1d7ea1] transition duration-200"
+        width: 180,
+        disableExport: true,
+        renderCell: (params) => {
+          const idStr = String(params.row._id);
+          const isDeleting = deletingIds.has(idStr);
+          return (
+            <div className="flex gap-2">
+              <Link
+                to={`/parcel/${params.row._id}`}
+                className="w-[70px] bg-[#2596be] text-white text-sm px-3 py-1 rounded hover:bg-[#1d7ea1] transition duration-200 disabled:opacity-50"
                 onClick={(e) => e.stopPropagation()}
               >
                 Edit
+              </Link>
+              <button
+                className={`w-[70px] text-white text-sm px-3 py-1 rounded transition duration-200 ${
+                  isDeleting
+                    ? "bg-[#c0c0c0] cursor-not-allowed"
+                    : "bg-[#e74c3c] hover:bg-[#c0392b]"
+                }`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!isDeleting) handleDelete(params.row._id);
+                }}
+                disabled={isDeleting}
+                title={isDeleting ? "Deleting…" : "Delete"}
+              >
+                {isDeleting ? "…" : "Delete"}
               </button>
-            </Link>
-            <button
-              className="w-[70px] bg-[#e74c3c] text-white text-sm px-3 py-1 rounded hover:bg-[#c0392b] transition duration-200"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDelete(params.row._id);
-              }}
-            >
-              Delete
-            </button>
-          </div>
-        ),
+            </div>
+          );
+        },
       },
     ],
-    []
+    [deletingIds, handleDelete]
   );
 
   // 1) initial fetch
@@ -161,20 +207,21 @@ const Parcels = () => {
     })();
   }, []);
 
-  // 2) register as admin
+  // 2) register admin
   useEffect(() => {
     if (!socket.connected) socket.connect();
     socket.emit("register", { email: "admin@excelbd.com", role: "admin" });
   }, []);
 
-  // 3) live updates
+  // 3) live updates (don’t resurrect deleted rows)
   useEffect(() => {
     const onUpdated = (p) => {
       const pid = String(p._id);
+      if (deletedIdsRef.current.has(pid)) return;
+
       setData((prev) => {
         const idx = prev.findIndex((x) => String(x._id) === pid);
-        if (idx === -1)
-          return [...prev, { ...p, _id: pid, status: Number(p.status ?? 0) }];
+        if (idx === -1) return prev; // don't re-add unknown rows
         const copy = [...prev];
         copy[idx] = {
           ...copy[idx],
@@ -185,10 +232,13 @@ const Parcels = () => {
         return copy;
       });
     };
+
     const onDeleted = (p) => {
       const pid = String(p._id);
+      deletedIdsRef.current.delete(pid);
       setData((prev) => prev.filter((x) => String(x._id) !== pid));
     };
+
     socket.on("parcel:updated", onUpdated);
     socket.on("parcel:deleted", onDeleted);
     return () => {
@@ -197,7 +247,7 @@ const Parcels = () => {
     };
   }, []);
 
-  // 4) join parcel rooms (fallback)
+  // 4) join/leave parcel rooms (fallback)
   useEffect(() => {
     const want = new Set(data.map((r) => String(r._id)));
     want.forEach((id) => {
@@ -236,15 +286,19 @@ const Parcels = () => {
         rows={data}
         getRowId={(row) => row._id}
         columns={columns}
-        checkboxSelection
+        autoHeight
         showToolbar
+        // Configure the built-in v8 toolbar (no deprecated GridToolbar).
         slotProps={{
           toolbar: {
-           
             csvOptions: {
               fileName: "parcels",
               utf8WithBom: true,
               allColumns: true,
+            },
+            printOptions: {
+              hideFooter: true,
+              hideToolbar: true,
             },
           },
         }}

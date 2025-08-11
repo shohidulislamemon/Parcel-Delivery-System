@@ -2,74 +2,50 @@
 const Parcel = require("../models/Parcel");
 const { getIO } = require("../sockets/io");
 
-// --- helpers: socket emissions (kept simple: same event names) -------------
-function emitParcelUpdate(parcel) {
-  try {
-    const io = getIO();
-    if (!io) return;
-
-    const payload = {
-      _id: parcel._id,
-      status: parcel.status,
-      assignedAgentName: parcel.assignedAgentName ?? null,
-      assignedAgentEmail: parcel.assignedAgentEmail ?? null,
-      senderEmail: parcel.senderEmail,
-      recipientEmail: parcel.recipientEmail,
-      updatedAt: parcel.updatedAt,
-    };
-
-    // notify viewers of this parcel
-    io.to(`parcel:${String(parcel._id)}`).emit("parcel:updated", payload);
-
-    // notify customer
-    if (parcel.senderEmail) {
-      io.to(`email:${String(parcel.senderEmail).toLowerCase()}`).emit("parcel:updated", payload);
-    }
-    // notify agent (if any)
-    if (parcel.assignedAgentEmail) {
-      io.to(`agent:${String(parcel.assignedAgentEmail).toLowerCase()}`).emit("parcel:updated", payload);
-    }
-  } catch { /* ignore if io not ready */ }
-}
+const mongoose = require("mongoose");
 
 function emitParcelUpdate(parcel, opts = {}) {
-  try {
-    const io = getIO();
-    if (!io) return;
+  const io = getIO();
+  if (!io) return;
 
-    const { alsoAgentEmails = [] } = opts;
+  const {
+    alsoAgentEmails = [],
+    notifyAdmins = true,
+  } = opts;
 
-    const payload = {
-      _id: parcel._id,
-      status: parcel.status,
-      assignedAgentName: parcel.assignedAgentName ?? null,
-      assignedAgentEmail: parcel.assignedAgentEmail ?? null,
-      senderEmail: parcel.senderEmail,
-      recipientEmail: parcel.recipientEmail,
-      updatedAt: parcel.updatedAt,
-    };
+  const norm = v => String(v || "").trim().toLowerCase();
 
-    // always these:
-    io.to(`parcel:${String(parcel._id)}`).emit("parcel:updated", payload);
-    if (parcel.senderEmail) {
-      io.to(`email:${String(parcel.senderEmail).toLowerCase()}`).emit("parcel:updated", payload);
-    }
-    if (parcel.assignedAgentEmail) {
-      io.to(`agent:${String(parcel.assignedAgentEmail).toLowerCase()}`).emit("parcel:updated", payload);
-    }
+  const payload = {
+    _id: parcel._id,
+    status: parcel.status,
+    assignedAgentName: parcel.assignedAgentName ?? null,
+    assignedAgentEmail: parcel.assignedAgentEmail ?? null,
+    senderEmail: parcel.senderEmail ?? null,
+    recipientEmail: parcel.recipientEmail ?? null,
+    updatedAt:
+      parcel.updatedAt instanceof Date
+        ? parcel.updatedAt.toISOString()
+        : (parcel.updatedAt ?? null),
+  };
 
-    // 🔑 NEW: notify any previous agents too (so they remove it)
-    alsoAgentEmails
-      .map(e => String(e || "").toLowerCase().trim())
-      .filter(Boolean)
-      .forEach(e => io.to(`agent:${e}`).emit("parcel:updated", payload));
+  // always notify viewers of this parcel
+  io.to(`parcel:${String(parcel._id)}`).emit("parcel:updated", payload);
 
-    // optional: keep admin dashboards live
-    io.to("admins").emit("parcel:updated", payload);
-  } catch {}
+  // customer
+  if (payload.senderEmail) {
+    io.to(`email:${norm(payload.senderEmail)}`).emit("parcel:updated", payload);
+  }
+
+  // agent(s): current + any previous/extra
+  const agentEmails = new Set(
+    [payload.assignedAgentEmail, ...alsoAgentEmails].map(norm).filter(Boolean)
+  );
+  agentEmails.forEach(e => io.to(`agent:${e}`).emit("parcel:updated", payload));
+
+  // optional: admin dashboards
+  if (notifyAdmins) io.to("admins").emit("parcel:updated", payload);
 }
 
-// ---------------------------------------------------------------------------
 
 // CREATE (no socket emit here)
 const createParcel = async (req, res) => {
@@ -261,15 +237,34 @@ const getDeliveryAgentParcels = async (req, res) => {
 };
 
 // DELETE (emit)
-const deleteParcel = async (req, res) => {
+const deleteParcel = async (req, res, next) => {
   try {
-    const parcel = await Parcel.findByIdAndDelete(req.params.id);
-    if (!parcel) return res.status(404).json("Parcel not found");
+    const { id } = req.params;
 
-    emitParcelDeleted(parcel); // deletion -> emit
-    res.status(200).json("Parcel has been deleted");
+    // Prevent CastError -> 500
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid parcel id" });
+    }
+
+    const deleted = await Parcel.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({ message: "Parcel not found" });
+    }
+
+    // Broadcast deletion
+    const io = req.app.get("io");
+    if (io) {
+      // global broadcast
+      io.emit("parcel:deleted", { _id: id });
+
+      // or, if you use per-room:
+      // io.to(`parcel:${id}`).emit("parcel:deleted", { _id: id });
+    }
+
+    // Use 204 No Content to keep responses clean
+    return res.status(204).send();
   } catch (error) {
-    res.status(500).json(error);
+    next(error);
   }
 };
 

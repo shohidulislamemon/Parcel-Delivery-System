@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+
 import { Outlet, RouterProvider, createBrowserRouter } from "react-router";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -16,10 +16,7 @@ import AgentDetails from "./pages/AgentDetails";
 import { connectAndRegister } from "./socket";
 
 const App = () => {
-  useEffect(() => {
-    // TODO: swap with your real logged-in admin email
-    connectAndRegister({ email: "admin@excelbd.com", role: "admin" });
-  }, []);
+  
 
   const Layout = () => (
     <div>

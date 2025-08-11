@@ -1,11 +1,12 @@
 // src/pages/Parcel.jsx
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useParams  } from "react-router";
 import { publicRequest } from "../requestMethods";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { socket } from "../socket";
 import QRCode from "react-qr-code";
+
 
 const STATUS = {
   0: "None",
@@ -38,6 +39,8 @@ const emailToName = (email) => {
 };
 
 const Parcel = () => {
+  
+const { parcelId } = useParams();
   const [parcel, setParcel] = useState({});
   const [formData, setFormData] = useState({});
   const [savingStatus, setSavingStatus] = useState(false);
@@ -47,8 +50,6 @@ const Parcel = () => {
   const [savingAssign, setSavingAssign] = useState(false);
   const [selectedAgentEmail, setSelectedAgentEmail] = useState("");
 
-  const location = useLocation();
-  const parcelId = location.pathname.split("/")[2];
 
   // Load parcel
   useEffect(() => {

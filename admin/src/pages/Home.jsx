@@ -1,22 +1,77 @@
 import React, { useEffect, useState } from "react";
 import { HiArrowSmallUp, HiArrowLongDown } from "react-icons/hi2";
 import { PieChart } from "@mui/x-charts/PieChart";
-import {publicRequest} from "../requestMethods";
+import { publicRequest } from "../requestMethods";
 
 const Home = () => {
   const [parcels, setParcels] = useState([]);
   const [users, setUsers] = useState([]);
 
-  const usersCount=users.length;
-  const deliveredCount=parcels.filter(parcel=>parcel.status==4).length;
-  const pendingCount=parcels.filter(parcel=>parcel.status==1).length;
+  // ---- helper: "is today?" using local time ----
+  const isToday = (raw) => {
+    if (!raw) return false;
+    const d = new Date(raw);
+    if (Number.isNaN(d.getTime())) return false;
+    const now = new Date();
+    return (
+      d.getFullYear() === now.getFullYear() &&
+      d.getMonth() === now.getMonth() &&
+      d.getDate() === now.getDate()
+    );
+  };
 
+  // Only today's parcels (prefer date -> updatedAt -> createdAt)
+  const todayParcels = parcels.filter((p) =>
+    isToday(p?.date ?? p?.updatedAt ?? p?.createdAt)
+  );
+
+  // Users are NOT filtered (you asked to keep total)
+  const usersCount = users.length;
+
+  // Counts from today's parcels only
+  const deliveredCount = todayParcels.filter((p) => Number(p.status) === 4).length;
+  const pendingCount = todayParcels.filter((p) => Number(p.status) === 1).length;
+  const assignToAgent = todayParcels.filter((p) => Number(p.status) === 2).length;
+  const returnCount = todayParcels.filter((p) => Number(p.status) === 5).length; 
+
+  const deliveredToday = todayParcels.filter((p) =>
+    [3, 4].includes(Number(p.status))
+  );
+
+  const capWords = (s) =>
+    s
+      .split(" ")
+      .filter(Boolean)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
+
+  const fallbackNameFromEmail = (email) => {
+    if (!email) return "Unknown";
+    const local = String(email).split("@")[0];
+    return capWords(local.replace(/[._-]+/g, " "));
+  };
+
+  const agentMap = new Map();
+  for (const p of deliveredToday) {
+    const email = String(p.assignedAgentEmail || "").toLowerCase().trim();
+    const name = p.assignedAgentName || fallbackNameFromEmail(email);
+    const key = email || name; // prefer email as unique key; fallback to name
+    const entry = agentMap.get(key) || { name, email, count: 0 };
+    entry.count += 1;
+    // keep the most informative name
+    if (!entry.name && name) entry.name = name;
+    agentMap.set(key, entry);
+  }
+
+  const topAgents = Array.from(agentMap.values())
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
 
   useEffect(() => {
     const getParcels = async () => {
       try {
         const res = await publicRequest.get("/parcels");
-        setParcels(res.data);
+        setParcels(res.data || []);
       } catch (error) {
         console.log(error);
       }
@@ -24,12 +79,11 @@ const Home = () => {
     getParcels();
   }, []);
 
-
   useEffect(() => {
     const getUsers = async () => {
       try {
         const res = await publicRequest.get("/users");
-        setUsers(res.data);
+        setUsers(res.data || []);
       } catch (error) {
         console.log(error);
       }
@@ -79,9 +133,9 @@ const Home = () => {
               {
                 data: [
                   { id: 0, value: pendingCount, label: "Pending " },
-                  { id: 1, value: 45, label: "In Transit" },
+                  { id: 1, value: assignToAgent, label: "Assigned to Delivery Agent" },
                   { id: 2, value: deliveredCount, label: "Delivered " },
-                  { id: 4, value: 9, label: "Returned" },
+                  { id: 4, value: returnCount, label: "Returned" },
                 ],
                 innerRadius: 30,
                 outerRadius: 100,
@@ -101,13 +155,17 @@ const Home = () => {
           />
         </div>
         <div className="h-[300px] w-[300px] shadow-lg p-[20px] ">
-          <h2 className="flex px-[20px] text-[#24bfd7]">Recent Users</h2>
+          <h2 className="flex px-[20px] text-[#24bfd7]">Top Delivery Agents</h2>
           <ol className="flex font-semibold flex-col justify-end px-[20px] mt-[10px] text-[#24bfd7]">
-            <li>1. Jhon Doe</li>
-            <li>2.Shekh Hasina</li>
-            <li>3.Kalida Hasina</li>
-            <li>4.Shekh Hasina</li>
-            <li>5.Alex Man</li>
+            {topAgents.length ? (
+              topAgents.map((a, i) => (
+                <li key={a.email || a.name}>
+                  {i + 1}. {a.name} {a.email ? `(${a.email})` : ""} — {a.count}
+                </li>
+              ))
+            ) : (
+              <li>No deliveries today</li>
+            )}
           </ol>
         </div>
       </div>
