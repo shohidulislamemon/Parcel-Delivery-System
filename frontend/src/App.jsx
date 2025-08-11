@@ -14,6 +14,7 @@ import ParcelDetails from "./pages/ParcelDetails";
 import BookParcel from "./pages/BookParcel";
 
 import { registerSocket, disconnectSocket } from "./socket";
+import Profile from "./pages/Profile";
 
 const Layout = () => {
   const location = useLocation();
@@ -51,6 +52,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute allowedRoles={["customer", "delivery-agent"]}>
             <MyParcels />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "profile",
+        element: (
+          <ProtectedRoute allowedRoles={["customer", "delivery-agent"]}>
+            <Profile />
           </ProtectedRoute>
         ),
       },

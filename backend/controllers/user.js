@@ -20,7 +20,33 @@ const getAllUsers = async (req, res) => {
     }
 };
 
+// controllers/user.js
+const getUserByEmail = async (req, res) => {
+  try {
+    const emailInput = req.params.email ?? req.query.email ?? req.body.email;
+    if (!emailInput) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const email = String(emailInput).trim().toLowerCase();
+
+    // Add { role: 'customer' } here too if you only want customers
+    const user = await User.findOne({ email })
+      .select("-password -resetToken -__v"); // hide sensitive fields
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch user", error: error.message });
+  }
+};
+
+
 module.exports = {
     deleteUser,
-    getAllUsers
+    getAllUsers,
+    getUserByEmail
 };
