@@ -7,7 +7,6 @@ const Home = () => {
   const [parcels, setParcels] = useState([]);
   const [users, setUsers] = useState([]);
 
-  // ---- helper: "is today?" using local time ----
   const isToday = (raw) => {
     if (!raw) return false;
     const d = new Date(raw);
@@ -20,15 +19,12 @@ const Home = () => {
     );
   };
 
-  // Only today's parcels (prefer date -> updatedAt -> createdAt)
   const todayParcels = parcels.filter((p) =>
     isToday(p?.date ?? p?.updatedAt ?? p?.createdAt)
   );
 
-  // Users are NOT filtered (you asked to keep total)
   const usersCount = users.length;
 
-  // Counts from today's parcels only
   const deliveredCount = todayParcels.filter((p) => Number(p.status) === 4).length;
   const pendingCount = todayParcels.filter((p) => Number(p.status) === 1).length;
   const assignToAgent = todayParcels.filter((p) => Number(p.status) === 2).length;
@@ -55,10 +51,9 @@ const Home = () => {
   for (const p of deliveredToday) {
     const email = String(p.assignedAgentEmail || "").toLowerCase().trim();
     const name = p.assignedAgentName || fallbackNameFromEmail(email);
-    const key = email || name; // prefer email as unique key; fallback to name
+    const key = email || name; 
     const entry = agentMap.get(key) || { name, email, count: 0 };
     entry.count += 1;
-    // keep the most informative name
     if (!entry.name && name) entry.name = name;
     agentMap.set(key, entry);
   }

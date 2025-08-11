@@ -13,16 +13,16 @@ const AgentDetails = () => {
  useEffect(() => {
   const getAgent = async () => {
     try {
-      const res = await publicRequest.get("/delivery-agents/" + agentId); // Use the correct agentId here
-      console.log("Agent data:", res.data); // Log the response to make sure you're getting the correct data
-      setAgent(res.data);  // Set the agent data
-      setFormData(res.data);  // Set the form data to prefill the form
+      const res = await publicRequest.get("/delivery-agents/" + agentId); 
+      console.log("Agent data:", res.data); 
+      setAgent(res.data); 
+      setFormData(res.data);  
     } catch (error) {
-      console.log("Error fetching agent:", error);  // Handle any errors
+      console.log("Error fetching agent:", error);  
     }
   };
-  getAgent(); // Call the function to fetch the agent
-}, [agentId]);  // The effect will run when the agentId changes
+  getAgent(); 
+}, [agentId]);  
 
 
   const handleChange = (e) => {
@@ -57,7 +57,6 @@ const AgentDetails = () => {
     </h2>
 
     <div className="grid grid-cols-2 gap-6">
-      {/* Full Name */}
       <div className="flex flex-col">
         <label className="mb-1">Full Name</label>
         <input
@@ -69,7 +68,6 @@ const AgentDetails = () => {
         />
       </div>
 
-      {/* Phone */}
       <div className="flex flex-col">
         <label className="mb-1">Phone</label>
         <input
@@ -81,7 +79,6 @@ const AgentDetails = () => {
         />
       </div>
 
-      {/* Email */}
       <div className="flex flex-col">
         <label className="mb-1">Email</label>
         <input
@@ -93,7 +90,6 @@ const AgentDetails = () => {
         />
       </div>
 
-      {/* Division */}
       <div className="flex flex-col">
         <label className="mb-1">Division</label>
         <input
@@ -105,7 +101,6 @@ const AgentDetails = () => {
         />
       </div>
 
-      {/* Address */}
       <div className="flex flex-col">
         <label className="mb-1">Address</label>
         <input
@@ -117,7 +112,6 @@ const AgentDetails = () => {
         />
       </div>
 
-      {/* Feedback */}
       <div className="flex flex-col col-span-2">
         <label className="mb-1">Feedback</label>
         <textarea
@@ -129,7 +123,6 @@ const AgentDetails = () => {
         ></textarea>
       </div>
 
-      {/* Note */}
       <div className="flex flex-col col-span-2">
         <label className="mb-1">Note</label>
         <textarea

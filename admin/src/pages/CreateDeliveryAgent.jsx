@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
-import { publicRequest } from "../requestMethods"; // Assuming publicRequest is defined
+import { publicRequest } from "../requestMethods"; 
 
 const CreateDeliveryAgent = () => {
   const [inputs, setInputs] = useState({});
@@ -18,7 +18,6 @@ const CreateDeliveryAgent = () => {
     const numbers = "0123456789";
     const special = "!@#$%^&*()_+";
 
-    // Ensure at least one from each category
     const getRandom = (chars) =>
       chars[Math.floor(Math.random() * chars.length)];
 
@@ -36,7 +35,6 @@ const CreateDeliveryAgent = () => {
       remainingChars += getRandom(allChars);
     }
 
-    // Combine and shuffle
     const password = [...requiredChars, ...remainingChars]
       .sort(() => Math.random() - 0.5) // Shuffle
       .join("");
@@ -46,11 +44,11 @@ const CreateDeliveryAgent = () => {
 
   const handleCreateAgent = async () => {
     try {
-      const password = generatePassword(8); // Generate password
-      // Send POST request to create a new delivery agent
+      const password = generatePassword(8); 
+      
       await publicRequest.post("/delivery-agents", {
         ...inputs,
-        password, // Send password along with other data
+        password, 
       });
       toast.success("Delivery Agent created successfully!");
     } catch (error) {
@@ -122,7 +120,6 @@ const CreateDeliveryAgent = () => {
         </div>
       </div>
 
-      {/* Submit */}
       <div className="mt-8">
         <button
           onClick={handleCreateAgent}

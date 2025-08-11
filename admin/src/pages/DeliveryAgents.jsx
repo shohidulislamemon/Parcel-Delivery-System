@@ -6,7 +6,6 @@ import { publicRequest } from "../requestMethods";
 const DeliveryAgents = () => {
   const [data, setData] = useState([]);
   
-  // Columns definition for Delivery Agents
   const columns = [
     { field: "_id", headerName: "ID", width: 60 },
     { field: "fullname", headerName: "Name", width: 150 },
@@ -54,7 +53,6 @@ const DeliveryAgents = () => {
   const handleDelete = async (id) => {
     try {
       await publicRequest.delete(`/delivery-agents/${id}`);
-      // Remove deleted agent from the UI without reloading
       setData((prev) => prev.filter((agent) => agent._id !== id));
     } catch (error) {
       console.log(error);

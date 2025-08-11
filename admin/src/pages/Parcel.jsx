@@ -1,4 +1,4 @@
-// src/pages/Parcel.jsx
+
 import { useEffect, useState } from "react";
 import { useParams  } from "react-router";
 import { publicRequest } from "../requestMethods";
@@ -45,7 +45,6 @@ const { parcelId } = useParams();
   const [formData, setFormData] = useState({});
   const [savingStatus, setSavingStatus] = useState(false);
 
-  // agents
   const [agents, setAgents] = useState([]);
   const [savingAssign, setSavingAssign] = useState(false);
   const [selectedAgentEmail, setSelectedAgentEmail] = useState("");
@@ -132,7 +131,6 @@ const { parcelId } = useParams();
     }));
   };
 
-  // Only action from dropdown is to set Pending (1) and clear assignment
   const handleStatusChange = async (nextCode) => {
     const next = Number(nextCode);
     if (next !== 1) return;
@@ -149,7 +147,6 @@ const { parcelId } = useParams();
       assignedAt: null,
     };
 
-    // optimistic UI
     const prevSnapshot = {
       status: formData.status,
       assignedAgentName: formData.assignedAgentName,
@@ -165,7 +162,7 @@ const { parcelId } = useParams();
       toast.success("Status set to Pending and agent unassigned");
     } catch (err) {
       console.error(err);
-      // rollback
+      
       setFormData((p) => ({ ...p, ...prevSnapshot }));
       setSelectedAgentEmail(prevSnapshot.assignedAgentEmail || "");
       toast.error("Failed to set Pending");
@@ -174,17 +171,14 @@ const { parcelId } = useParams();
     }
   };
 
-  // Assign delivery agent by email → set name+email and status=2
   const handleAssignAgent = async (agentEmail) => {
     const email = String(agentEmail || "").toLowerCase().trim();
 
-    // ignore placeholder/empty choice
     if (!email) {
       setSelectedAgentEmail("");
       return;
     }
 
-    // no-op if already assigned to this agent and status is 2
     const alreadyAssigned =
       (formData.assignedAgentEmail || parcel.assignedAgentEmail || "")
         .toLowerCase()
@@ -200,10 +194,9 @@ const { parcelId } = useParams();
     const payload = {
       assignedAgentName: derivedName,
       assignedAgentEmail: email,
-      status: 2, // Assigned to Delivery Agent
+      status: 2, 
     };
 
-    // optimistic UI
     setSavingAssign(true);
     const prev = {
       assignedAgentName: formData.assignedAgentName,
@@ -218,7 +211,6 @@ const { parcelId } = useParams();
       toast.success("Agent assigned and status set to Assigned");
     } catch (err) {
       console.error(err);
-      // rollback
       setFormData((p) => ({
         ...p,
         assignedAgentName: prev.assignedAgentName,
@@ -261,7 +253,6 @@ const { parcelId } = useParams();
   const currentAgentEmail =
     formData.assignedAgentEmail || parcel.assignedAgentEmail || "";
 
-  // ===== QR value (encode the parcel ID only, as you asked) =====
   const qrValue = parcelId ? String(parcelId) : "";
 
   return (

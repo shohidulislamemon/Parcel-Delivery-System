@@ -5,14 +5,14 @@ import Footer from "../components/Footer";
 const Login = () => {
   return (
     <div className="min-h-screen flex flex-col bg-[#2a2b3a] text-white">
-      {/* Title */}
+      
       <header className="text-center py-4 text-3xl font-bold">
         Admin Login
       </header>
 
       <div className="flex flex-1 items-center justify-center pb-3">
         <div className="flex w-[85%] max-w-5xl shadow-2xl rounded-lg overflow-hidden bg-[#2f3041]">
-          {/* Left Image */}
+          
           <div className="hidden md:flex flex-col justify-between w-1/2 bg-[#2f3041] p-6">
             <img
               src="/loginimg.png"
