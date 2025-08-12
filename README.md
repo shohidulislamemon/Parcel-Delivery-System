@@ -261,14 +261,8 @@ transport.sendMail(mailOptions, (err, info) => {
   console.log("Response:", info?.response || "No SMTP response");
 });
 
-License
 
-MIT
 Author
 
 Shohidul Islam Emon
 📧 shohidulislamemon99@gmail.com • 📞 +8801646506191
-
-
-If you want a **shorter** README for the root and move deeper examples to `/docs`, say the word and I’ll split it cleanly.
-::contentReference[oaicite:0]{index=0}
